@@ -1,0 +1,17 @@
+/* ===== GLOBAL / RESET ===== */
+* { box-sizing: border-box; }
+html, body, #root { height: 100%; }
+
+body{
+  margin: 0;
+  /* font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; */
+  background: var(--bg-app);
+  color: var(--text);
+}
+
+/* ===== THEME VARIABLES (UFF TV) ===== */
+/* :root{
+
+} */
+
+
