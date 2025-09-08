@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
+import axios from "axios";
 
 export default function LiveVideo() {
   const [videos, setVideos] = useState([
@@ -8,6 +9,15 @@ export default function LiveVideo() {
   const [showModal, setShowModal] = useState(false);
   const [editingVideo, setEditingVideo] = useState(null);
   const [videoUrl, setVideoUrl] = useState("");
+
+  //
+  const [allVideosList, setAllVideosList] = useState([])
+
+  //api call for videos
+  useEffect(()=>{
+    axios
+      .get('')
+  },[])
 
   // open modal for Add
   const handleAdd = () => {
