@@ -1,38 +1,42 @@
-import { useState } from "react";
+
+import { useEffect, useState } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
+import axios from "axios";
+import { baseURl } from "../Api/url";
 
 export default function VideoList() {
+  const [allVideosList, setAllVideosList] = useState([]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [loading, setLoading] = useState(true);
+
   const [showModal, setShowModal] = useState(false);
   const [editingVideo, setEditingVideo] = useState(null);
-  const [videos, setVideos] = useState([
-    {
-      id: 1,
-      category: "Movies",
-      title: "Movie 1",
-      description: "Some description",
-      url: "uploads/videos/video-1.mp4",
-      thumbnail: "https://via.placeholder.com/40",
-      type: "long_form",
-      tags: "trending, recent",
-    },
-    {
-      id: 2,
-      category: "Sports",
-      title: "Match Highlights",
-      description: "Exciting highlights",
-      url: "uploads/videos/video-2.mp4",
-      thumbnail: "https://via.placeholder.com/40",
-      type: "short_form",
-      tags: "sports, trending",
-    },
-  ]);
+
+  // api call for videos
+  const fetchVideos = () => {
+    setLoading(true);
+    axios
+      .get(`${baseURl}api/videos/`)
+      .then((res) => {
+        setAllVideosList(res.data.data || []);
+        setLoading(false);
+      })
+      .catch((err) => {
+        console.error(err);
+        setLoading(false);
+      });
+  };
+
+  useEffect(() => {
+    fetchVideos();
+  }, []);
 
   const [formData, setFormData] = useState({
     category: "",
     title: "",
     description: "",
     url: "",
-    thumbnail: "",
+    thumbnail: null,
     type: "",
     tags: "",
   });
@@ -44,7 +48,7 @@ export default function VideoList() {
       title: "",
       description: "",
       url: "",
-      thumbnail: "",
+      thumbnail: null,
       type: "",
       tags: "",
     });
@@ -53,29 +57,74 @@ export default function VideoList() {
 
   const handleEdit = (video) => {
     setEditingVideo(video);
-    setFormData(video);
+    setFormData({
+      category: video.category?._id || video.category || "",
+      title: video.title || "",
+      description: video.description || "",
+      url: video.url || "",
+      thumbnail: null, // user can re-upload
+      type: video.type || "",
+      tags: video.tags ? video.tags.join(", ") : "",
+    });
     setShowModal(true);
   };
 
   const handleClose = () => setShowModal(false);
 
   const handleSave = () => {
+    const fd = new FormData();
+    fd.append("category", formData.category);
+    fd.append("title", formData.title);
+    fd.append("description", formData.description);
+    fd.append("url", formData.url);
+    if (formData.thumbnail) fd.append("thumbnail", formData.thumbnail);
+    fd.append("type", formData.type);
+    fd.append("tags", formData.tags);
+
     if (editingVideo) {
-      setVideos(videos.map((v) => (v.id === editingVideo.id ? { ...formData, id: v.id } : v)));
+      // Update existing video
+      axios
+        .put(`${baseURl}api/videos/${editingVideo._id}/`, fd, {
+          headers: { "Content-Type": "multipart/form-data" },
+        })
+        .then(() => {
+          alert("Video updated successfully");
+          fetchVideos();
+          setShowModal(false);
+        })
+        .catch((err) => console.error("Error updating video:", err));
     } else {
-      setVideos([...videos, { ...formData, id: Date.now() }]);
+      // ✅ Add new video with FormData
+      axios
+        .post(`${baseURl}api/videos/`, fd, {
+          headers: { "Content-Type": "multipart/form-data" },
+        })
+        .then(() => {
+          alert("Video added successfully");
+          fetchVideos();
+          setShowModal(false);
+        })
+        .catch((err) => console.error("Error adding video:", err));
     }
-    setShowModal(false);
   };
 
   const handleDelete = (id) => {
-    setVideos(videos.filter((v) => v.id !== id));
+    if (!window.confirm("Are you sure you want to delete this video?")) return;
+    console.log(id)
+
+    axios
+      .delete(`${baseURl}api/videos/${id}`)
+      .then(() => {
+        alert("Video deleted successfully");
+        fetchVideos();
+      })
+      .catch((err) => console.error("Error deleting video:", err));
   };
 
   const handleChange = (e) => {
     const { name, value, files } = e.target;
     if (name === "thumbnail" && files.length > 0) {
-      setFormData({ ...formData, thumbnail: URL.createObjectURL(files[0]) });
+      setFormData({ ...formData, thumbnail: files[0] });
     } else {
       setFormData({ ...formData, [name]: value });
     }
@@ -97,117 +146,143 @@ export default function VideoList() {
       {/* Table Section */}
       <div className="app-card p-3">
         <div className="d-lg-flex justify-content-between align-items-center mb-3">
-          <div className="d-flex align-items-center mb-lg-0 mb-3">
-            <label className="me-2">Show</label>
-            <select className="form-select form-select-sm" style={{ width: "70px" }}>
-              <option>10</option>
-              <option>25</option>
-              <option>50</option>
-            </select>
-            <label className="ms-2">entries</label>
-          </div>
           <div>
-            <input type="text" className="form-control" placeholder="Search..." />
+            <input
+              type="text"
+              className="form-control"
+              placeholder="Search..."
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
           </div>
         </div>
 
-        {/* Video Table */}
-        <div className="table-responsive">
-          <table className="table table-hover align-middle">
-            <thead>
-              <tr>
-                <th>#</th>
-                <th>Category</th>
-                <th>Title</th>
-                <th>Description</th>
-                <th>Url</th>
-                <th>Thumbnail</th>
-                <th>Type</th>
-                <th>Tags</th>
-                <th style={{ width: "120px" }}>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {videos.map((video, idx) => (
-                <tr key={video.id}>
-                  <td>{idx + 1}</td>
-                  <td>{video.category}</td>
-                  <td>{video.title}</td>
-                  <td>{video.description}</td>
-                  <td>{video.url}</td>
-                  <td>
-                    <img src={video.thumbnail} alt="thumb" className="avatar rounded" width="40" />
-                  </td>
-                  <td>{video.type}</td>
-                  <td>{video.tags}</td>
-                  <td>
-                    <div className="d-flex">
-                      <button
-                        onClick={() => handleEdit(video)}
-                        className="btn btn-sm btn-primary btn-primary-light me-2"
-                      >
-                        <i className="bi bi-pencil-square"></i>
-                      </button>
-                      <button
-                        onClick={() => handleDelete(video.id)}
-                        className="btn btn-sm btn-danger"
-                      >
-                        <i className="bi bi-trash"></i>
-                      </button>
-                    </div>
-                  </td>
+        {/* Loader */}
+        {loading ? (
+          <div className="text-center">Loading...</div>
+        ) : (
+          <div className="table-responsive">
+            <table className="table table-hover align-middle">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Category</th>
+                  <th>Title</th>
+                  <th>Description</th>
+                  <th>Url</th>
+                  <th>Thumbnail</th>
+                  <th>Type</th>
+                  <th>Tags</th>
+                  <th style={{ width: "120px" }}>Actions</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Pagination */}
-        <div className="d-flex justify-content-between align-items-center mt-3">
-          <div>Showing 1 to {videos.length} of {videos.length} entries</div>
-          <nav>
-            <ul className="pagination pagination-sm mb-0">
-              <li className="page-item disabled">
-                <span className="page-link">Previous</span>
-              </li>
-              <li className="page-item active">
-                <span className="page-link">1</span>
-              </li>
-              <li className="page-item">
-                <span className="page-link">Next</span>
-              </li>
-            </ul>
-          </nav>
-        </div>
+              </thead>
+              <tbody>
+                {allVideosList.length > 0 ? (
+                  allVideosList
+                    .filter((video) =>
+                      searchTerm === ""
+                        ? video
+                        : video.title
+                            ?.toLowerCase()
+                            .includes(searchTerm.toLowerCase())
+                    )
+                    .map((video, idx) => (
+                      <tr key={video._id || idx}>
+                        <td>{idx + 1}</td>
+                        <td>{video.category?.name || "N/A"}</td>
+                        <td>{video.title || "Untitled"}</td>
+                        <td>{video.description || "No description"}</td>
+                        <td>
+                          {video.url ? (
+                            <a
+                              href={video.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                            >
+                              MP4
+                            </a>
+                          ) : (
+                            "No URL"
+                          )}
+                        </td>
+                        <td>
+                          <img
+                            src={
+                              video.thumbnail
+                                ? `${baseURl}${video.thumbnail}`
+                                : "https://via.placeholder.com/40"
+                            }
+                            alt={video.title || "thumbnail"}
+                            className="avatar rounded"
+                            width="40"
+                          />
+                        </td>
+                        <td>{video.type || "N/A"}</td>
+                        <td>
+                          {video.tags?.length > 0
+                            ? video.tags.join(", ")
+                            : "N/A"}
+                        </td>
+                        <td>
+                          <div className="d-flex">
+                            <button
+                              onClick={() => handleEdit(video)}
+                              className="btn btn-sm btn-primary me-2"
+                            >
+                              <i className="bi bi-pencil-square"></i>
+                            </button>
+                            <button
+                              onClick={() => handleDelete(video._id || video.id )}
+                              className="btn btn-sm btn-danger"
+                            >
+                              <i className="bi bi-trash"></i>
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                ) : (
+                  <tr>
+                    <td colSpan="9" className="text-center text-muted">
+                      No videos found
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
 
       {/* Add/Edit Modal */}
       {showModal && (
-        <div className="modal fade show d-block" style={{ background: "rgba(0,0,0,0.5)" }}>
+        <div
+          className="modal fade show d-block"
+          style={{ background: "rgba(0,0,0,0.5)" }}
+        >
           <div className="modal-dialog modal-dialog-centered">
             <div className="modal-content">
               <div className="modal-header">
                 <h5 className="modal-title">
                   {editingVideo ? "Edit Video" : "Add Video"}
                 </h5>
-                <button type="button" className="btn-close" onClick={handleClose}></button>
+                <button
+                  type="button"
+                  className="btn-close"
+                  onClick={handleClose}
+                ></button>
               </div>
               <div className="modal-body">
                 <form>
                   <div className="mb-3">
-                    <label className="form-label">Category</label>
-                    <select
+                    <label className="form-label">Video Category</label>
+                    <input
+                      type="text"
                       name="category"
-                      className="form-select"
+                      className="form-control"
                       value={formData.category}
                       onChange={handleChange}
-                    >
-                      <option value="">Select Category</option>
-                      <option value="Movies">Movies</option>
-                      <option value="Sports">Sports</option>
-                      <option value="Music">Music</option>
-                      <option value="News">News</option>
-                    </select>
+                      placeholder="Enter category ID or name"
+                    />
                   </div>
                   <div className="mb-3">
                     <label className="form-label">Title</label>
@@ -247,14 +322,6 @@ export default function VideoList() {
                       className="form-control"
                       onChange={handleChange}
                     />
-                    {formData.thumbnail && (
-                      <img
-                        src={formData.thumbnail}
-                        alt="preview"
-                        className="mt-2 rounded"
-                        width="80"
-                      />
-                    )}
                   </div>
                   <div className="mb-3">
                     <label className="form-label">Type</label>
@@ -283,10 +350,18 @@ export default function VideoList() {
                 </form>
               </div>
               <div className="modal-footer">
-                <button type="button" className="btn btn-danger" onClick={handleClose}>
+                <button
+                  type="button"
+                  className="btn btn-danger"
+                  onClick={handleClose}
+                >
                   Cancel
                 </button>
-                <button type="button" className="btn btn-primary" onClick={handleSave}>
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  onClick={handleSave}
+                >
                   {editingVideo ? "Update" : "Add"}
                 </button>
               </div>

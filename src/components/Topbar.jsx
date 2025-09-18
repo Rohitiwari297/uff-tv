@@ -1,6 +1,20 @@
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 
 export default function Topbar() {
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    // Remove auth token (adjust according to your project)
+    localStorage.removeItem("token");  
+    sessionStorage.removeItem("token");  
+
+    // Optionally clear user state if you store it in context/redux
+    // dispatch({ type: "LOGOUT" });
+
+    // Redirect to login
+    navigate("/login");
+  };
+
   return (
     <header className="app-topbar">
       {/* Mobile burger */}
@@ -22,7 +36,6 @@ export default function Topbar() {
       </div>
 
       <div className="ms-auto d-flex align-items-center gap-2">
-
         {/* Profile dropdown */}
         <div className="dropdown">
           <button
@@ -46,25 +59,13 @@ export default function Topbar() {
                 <i className="bi bi-lock"></i> Change Password
               </NavLink>
             </li>
-            {/* <li>
-              <a className="dropdown-item d-flex align-items-center gap-2" href="#">
-                <i className="bi bi-inbox"></i> Inbox
-              </a>
-            </li>
             <li>
-              <a className="dropdown-item d-flex align-items-center gap-2" href="#">
-                <i className="bi bi-gear"></i> Settings
-              </a>
-            </li>
-            <li>
-              <a className="dropdown-item d-flex align-items-center gap-2" href="#">
-              <i className="bi bi-lock"></i> Change Password
-              </a>
-            </li> */}
-            <li>
-              <a className="dropdown-item d-flex align-items-center gap-2" href="#">
+              <button
+                className="dropdown-item d-flex align-items-center gap-2"
+                onClick={handleLogout}
+              >
                 <i className="bi bi-box-arrow-right"></i> Log Out
-              </a>
+              </button>
             </li>
           </ul>
         </div>
