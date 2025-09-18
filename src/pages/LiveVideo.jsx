@@ -5,7 +5,6 @@ import { baseURl } from "../Api/url";
 import Hls from "hls.js";
 
 export default function LiveVideo() {
-  const [videos, setVideos] = useState([{ id: 1, url: "uploads/videos/video-1.mp4" }]);
   const [showModal, setShowModal] = useState(false);
   const [editingVideo, setEditingVideo] = useState(null);
   const [videoUrl, setVideoUrl] = useState("");
@@ -15,33 +14,53 @@ export default function LiveVideo() {
   const [liveRunVideo, setLiveRunVideo] = useState("");
   const [changeURL, setChangeURL] = useState("");
   const [urlReceived, setUrlReceived] = useState("");
-  const [isOn, setIsOn] = useState(false);
+  const [isOn, setIsOn] = useState(false); // override state from backend
 
   const videoRef = useRef(null);
 
-  // Ensure videoSrc is always a string
-  const videoSrc = isOn && urlReceived ? String(urlReceived) : liveRunVideo ? String(liveRunVideo) : "";
+  // ✅ Always a string for video source
+  const videoSrc =
+    isOn && urlReceived
+      ? String(urlReceived)
+      : liveRunVideo
+      ? String(liveRunVideo)
+      : "";
 
-  // Fetch scheduled live videos
+  // ✅ Fetch scheduled slots
   useEffect(() => {
-    axios.get(`${baseURl}api/live-stream/schedule/slots`)
+    axios
+      .get(`${baseURl}api/live-stream/schedule/slots`)
       .then((res) => setLiveVideos(res.data.data))
       .catch(console.error);
   }, []);
 
-  // Fetch current live video
-  useEffect(() => {
-    axios.get(`${baseURl}api/live-stream/schedule/live`)
+  // ✅ Fetch current live stream info
+  const fetchLiveData = () => {
+    axios
+      .get(`${baseURl}api/live-stream/schedule/live`)
       .then((res) => {
         if (res.data?.data?.url) setLiveRunVideo(res.data.data.url);
+        if (typeof res.data?.data?.override === "boolean")
+          setIsOn(res.data.data.override);
+        if (res.data?.data?.url && res.data?.data?.override) {
+          setUrlReceived(res.data.data.url);
+        }
       })
       .catch(console.error);
+  };
+
+  useEffect(() => {
+    fetchLiveData();
   }, []);
 
-  // Handle HLS or MP4 playback
+  // ✅ Re-fetch when ON/OFF changes
+  useEffect(() => {
+    fetchLiveData();
+  }, [isOn]);
+
+  // ✅ Handle HLS / MP4
   useEffect(() => {
     if (!videoSrc) return;
-
     const video = videoRef.current;
 
     if (Hls.isSupported() && videoSrc.endsWith(".m3u8")) {
@@ -54,67 +73,135 @@ export default function LiveVideo() {
     }
   }, [videoSrc]);
 
-  // Add/Edit modal
+  // Add modal
   const handleAdd = () => {
     setEditingVideo(null);
     setVideoUrl("");
+    setStartTime("");
+    setEndTime("");
     setShowModal(true);
   };
 
+  // Edit modal
   const handleEdit = (video) => {
-    setEditingVideo(video);
-    setVideoUrl(video.url);
-    setShowModal(true);
+    axios
+      .get(`${baseURl}api/videos/${video.id || video._id}`)
+      .then((res) => {
+        const data = res.data?.data || video;
+        setEditingVideo(data);
+        setVideoUrl(data.url);
+        setStartTime(data.startTime || "");
+        setEndTime(data.endTime || "");
+        setShowModal(true);
+      })
+      .catch(() => {
+        setEditingVideo(video);
+        setVideoUrl(video.url);
+        setStartTime(video.startTime || "");
+        setEndTime(video.endTime || "");
+        setShowModal(true);
+      });
   };
 
-  // Delete a video
+  // Delete video
   const handleDelete = (id) => {
-    axios.delete(`${baseURl}api/live-stream/schedule/slot`, { data: { slotId: id } })
+    axios
+      .delete(`${baseURl}api/live-stream/schedule/slot`, { data: { slotId: id } })
       .then((res) => {
         alert(res.data.message);
-        setLiveVideos((prev) => prev.filter((vid) => vid.id !== id && vid._id !== id));
+        setLiveVideos((prev) =>
+          prev.filter((vid) => vid.id !== id && vid._id !== id)
+        );
       })
-      .catch((err) => console.error("Delete failed:", err.response?.data || err.message));
+      .catch((err) =>
+        console.error("Delete failed:", err.response?.data || err.message)
+      );
   };
 
-  // Save/Add video
+  // Save/Add/Edit video
   const handleSave = () => {
     if (!startTime || !endTime || !videoUrl) {
       alert("All fields are required");
       return;
     }
 
-    axios.post(
-      `${baseURl}api/live-stream/schedule/add`,
-      { url: videoUrl, startTime, endTime },
-      { headers: { "Content-Type": "application/json" } }
-    )
-    .then((res) => {
-      alert("URL added successfully");
-      setLiveVideos((prev) => [...prev, res.data.data]);
-      setShowModal(false);
-    })
-    .catch((err) => console.error("Error adding video:", err));
+    if (editingVideo) {
+      axios
+        .put(
+          `${baseURl}api/live-stream/schedule/slot/${
+            editingVideo.id || editingVideo._id
+          }`,
+          { url: videoUrl, startTime, endTime },
+          { headers: { "Content-Type": "application/json" } }
+        )
+        .then((res) => {
+          alert("Video updated successfully");
+          setLiveVideos((prev) =>
+            prev.map((vid) =>
+              vid.id === (editingVideo.id || editingVideo._id) ||
+              vid._id === (editingVideo.id || editingVideo._id)
+                ? res.data.data
+                : vid
+            )
+          );
+          setShowModal(false);
+          setEditingVideo(null);
+        })
+        .catch((err) => console.error("Error updating video:", err));
+    } else {
+      axios
+        .post(
+          `${baseURl}api/live-stream/schedule/add`,
+          { url: videoUrl, startTime, endTime },
+          { headers: { "Content-Type": "application/json" } }
+        )
+        .then((res) => {
+          alert("URL added successfully");
+          setLiveVideos((prev) => [...prev, res.data.data]);
+          setShowModal(false);
+        })
+        .catch((err) => console.error("Error adding video:", err));
+    }
   };
 
-  // Change Live URL
+  // ✅ Change live URL and update instantly
   const urlHandler = () => {
     if (!changeURL) {
       alert("URL is mandatory");
       return;
     }
 
-    axios.post(
-      `${baseURl}api/live-stream/schedule/live`,
-      { url: changeURL, enabled: true },
-      { headers: { "Content-Type": "application/json" } }
-    )
-    .then((res) => {
-      if (res.data?.data?.url) setUrlReceived(res.data.data.url);
-      alert("URL added successfully");
-      setChangeURL("");
-    })
-    .catch(console.error);
+    axios
+      .post(
+        `${baseURl}api/live-stream/schedule/live`,
+        { url: changeURL, enabled: true, override: true },
+        { headers: { "Content-Type": "application/json" } }
+      )
+      .then(() => {
+        // ✅ Update state instantly
+        setIsOn(true);
+        setUrlReceived(changeURL);
+
+        alert("URL added successfully");
+        setChangeURL("");
+      })
+      .catch(console.error);
+  };
+
+  // Toggle override
+  const toggleOverride = () => {
+    const newOverride = !isOn;
+    axios
+      .post(
+        `${baseURl}api/live-stream/schedule/live`,
+        { override: newOverride, url: urlReceived || liveRunVideo, enabled: true },
+        { headers: { "Content-Type": "application/json" } }
+      )
+      .then(() => {
+        setIsOn(newOverride);
+        fetchLiveData(); // ✅ refresh latest data
+      })
+      .catch((err) => console.error("Failed to update override:", err));
   };
 
   return (
@@ -122,14 +209,16 @@ export default function LiveVideo() {
       <div className="text-muted small text-center">Dashboard / Live Video</div>
 
       <div className="row mb-3">
-        <div className=" flex col-lg-6 align-content-center">
+        <div className="flex col-lg-6 align-content-center">
           <button
-              onClick={() => setIsOn(!isOn)}
-              className={`px-2 py-2 rounded text-white ${isOn ? "bg-success" : "bg-danger"} ` }
-              style={{ fontSize: "0.45rem" }}
-            >
-              {isOn ? "ON" : "OFF"}
-            </button>
+            onClick={toggleOverride}
+            className={`px-2 py-2 rounded text-white ${
+              isOn ? "bg-success" : "bg-danger"
+            } `}
+            style={{ fontSize: "0.45rem" }}
+          >
+            {isOn ? "ON" : "OFF"}
+          </button>
           <h5 className="mb-1">Live Video</h5>
           <div className="position-relative d-inline-block">
             <span
@@ -149,7 +238,7 @@ export default function LiveVideo() {
           </div>
 
           <p className="small text-muted mt-1">
-            Now Playing: {isOn ? "Custom URL" : "Live Video"}
+            Now Playing: {isOn ? "Custom Live URL" : "Scheduled Video"}
           </p>
         </div>
 
@@ -169,7 +258,11 @@ export default function LiveVideo() {
         </div>
       </div>
 
-      <div className="app-card p-3" style={{ maxHeight: "300px", overflow: "auto" }}>
+      {/* Table */}
+      <div
+        className="app-card p-3"
+        style={{ maxHeight: "300px", overflow: "auto" }}
+      >
         <div className="d-flex justify-content-between align-items-center mb-3">
           <h5 className="mb-1">Scheduled Videos</h5>
           <button className="btn btn-primary" onClick={handleAdd}>
@@ -197,6 +290,12 @@ export default function LiveVideo() {
                     <td>{video.endTime}</td>
                     <td>
                       <button
+                        onClick={() => handleEdit(video)}
+                        className="btn btn-sm btn-primary me-2"
+                      >
+                        <i className="bi bi-pencil-square"></i>
+                      </button>
+                      <button
                         onClick={() => handleDelete(video.id || video._id)}
                         className="btn btn-sm btn-danger"
                       >
@@ -217,13 +316,23 @@ export default function LiveVideo() {
         </div>
       </div>
 
+      {/* Modal */}
       {showModal && (
-        <div className="modal fade show d-block" style={{ background: "rgba(0,0,0,0.5)" }}>
+        <div
+          className="modal fade show d-block"
+          style={{ background: "rgba(0,0,0,0.5)" }}
+        >
           <div className="modal-dialog modal-dialog-centered">
             <div className="modal-content">
               <div className="modal-header">
-                <h5 className="modal-title">{editingVideo ? "Edit Video" : "Add Video"}</h5>
-                <button type="button" className="btn-close" onClick={() => setShowModal(false)}></button>
+                <h5 className="modal-title">
+                  {editingVideo ? "Edit Video" : "Add Video"}
+                </h5>
+                <button
+                  type="button"
+                  className="btn-close"
+                  onClick={() => setShowModal(false)}
+                ></button>
               </div>
               <div className="modal-body">
                 <div className="mb-3">
@@ -252,10 +361,18 @@ export default function LiveVideo() {
                 </div>
               </div>
               <div className="modal-footer">
-                <button type="button" className="btn btn-danger" onClick={() => setShowModal(false)}>
+                <button
+                  type="button"
+                  className="btn btn-danger"
+                  onClick={() => setShowModal(false)}
+                >
                   Cancel
                 </button>
-                <button type="button" className="btn btn-primary" onClick={handleSave}>
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  onClick={handleSave}
+                >
                   {editingVideo ? "Update" : "Add"}
                 </button>
               </div>
@@ -266,5 +383,3 @@ export default function LiveVideo() {
     </div>
   );
 }
-
-    

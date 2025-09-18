@@ -102,7 +102,20 @@ export default function CategoryList() {
   const handleDelete = (id) => {
     // console.log(id)
     axios 
-      .delete(`${baseURl}`)
+      .delete(`${baseURl}api/category/${id}`)
+      .then((res)=>{
+        console.log(res.data)
+        alert("Record delete successfull")
+
+        //update state
+        setCategory((prev)=>{
+          const update = prev.filter((data)=> data.id !==id && data._id !== id)
+          return update;
+        })
+      })
+      .catch((err)=> {
+        console.log("Error in Deletion",err)
+      })
   }
 
 
