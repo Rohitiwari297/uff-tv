@@ -18,7 +18,7 @@ export default function LiveVideo() {
 
   const videoRef = useRef(null);
 
-  // ✅ Always a string for video source
+  // Always a string for video source
   const videoSrc =
     isOn && urlReceived
       ? String(urlReceived)
@@ -26,7 +26,7 @@ export default function LiveVideo() {
       ? String(liveRunVideo)
       : "";
 
-  // ✅ Fetch scheduled slots
+  // Fetch scheduled slots
   useEffect(() => {
     axios
       .get(`${baseURl}api/live-stream/schedule/slots`)
@@ -34,7 +34,7 @@ export default function LiveVideo() {
       .catch(console.error);
   }, []);
 
-  // ✅ Fetch current live stream info
+  // Fetch current live stream info
   const fetchLiveData = () => {
     axios
       .get(`${baseURl}api/live-stream/schedule/live`)
@@ -53,12 +53,12 @@ export default function LiveVideo() {
     fetchLiveData();
   }, []);
 
-  // ✅ Re-fetch when ON/OFF changes
+  // Re-fetch when ON/OFF changes
   useEffect(() => {
     fetchLiveData();
   }, [isOn]);
 
-  // ✅ Handle HLS / MP4
+  // Handle HLS / MP4
   useEffect(() => {
     if (!videoSrc) return;
     const video = videoRef.current;
@@ -105,8 +105,13 @@ export default function LiveVideo() {
 
   // Delete video
   const handleDelete = (id) => {
+    const confirmDelete = window.confirm("Do you want to delete the video?");
+    if (!confirmDelete) return; // stop if user cancels
+
     axios
-      .delete(`${baseURl}api/live-stream/schedule/slot`, { data: { slotId: id } })
+      .delete(`${baseURl}api/live-stream/schedule/slot`, {
+        data: { slotId: id },
+      })
       .then((res) => {
         alert(res.data.message);
         setLiveVideos((prev) =>
@@ -164,7 +169,7 @@ export default function LiveVideo() {
     }
   };
 
-  // ✅ Change live URL and update instantly
+  // Change live URL and update instantly
   const urlHandler = () => {
     if (!changeURL) {
       alert("URL is mandatory");
@@ -178,7 +183,7 @@ export default function LiveVideo() {
         { headers: { "Content-Type": "application/json" } }
       )
       .then(() => {
-        // ✅ Update state instantly
+        // Update state instantly
         setIsOn(true);
         setUrlReceived(changeURL);
 
@@ -194,12 +199,16 @@ export default function LiveVideo() {
     axios
       .post(
         `${baseURl}api/live-stream/schedule/live`,
-        { override: newOverride, url: urlReceived || liveRunVideo, enabled: true },
+        {
+          override: newOverride,
+          url: urlReceived || liveRunVideo,
+          enabled: true,
+        },
         { headers: { "Content-Type": "application/json" } }
       )
       .then(() => {
         setIsOn(newOverride);
-        fetchLiveData(); // ✅ refresh latest data
+        fetchLiveData(); //  refresh latest data
       })
       .catch((err) => console.error("Failed to update override:", err));
   };
@@ -209,17 +218,12 @@ export default function LiveVideo() {
       <div className="text-muted small text-center">Dashboard / Live Video</div>
 
       <div className="row mb-3">
-        <div className="flex col-lg-6 align-content-center">
-          <button
-            onClick={toggleOverride}
-            className={`px-2 py-2 rounded text-white ${
-              isOn ? "bg-success" : "bg-danger"
-            } `}
-            style={{ fontSize: "0.45rem" }}
-          >
-            {isOn ? "ON" : "OFF"}
-          </button>
-          <h5 className="mb-1">Live Video</h5>
+        <div className=" col-lg-6 align-content-center">
+          <div className="col-lg-12 d-flex justify-content-between align-items-center">
+            <h5 className="mb-1">Live Video</h5>
+            
+          </div>
+
           <div className="position-relative d-inline-block">
             <span
               className="bg-danger text-white position-absolute top-0 start-0 mt-2 ml-2 px-1 py-0 rounded d-flex align-items-center gap-1"
@@ -242,8 +246,20 @@ export default function LiveVideo() {
           </p>
         </div>
 
-        <div className="col-lg-6 align-content-center">
+        <div className="col-lg-6 ">
           <div className="text-center">
+            <div className="text-end">
+            <button
+              onClick={toggleOverride}
+              className={`px-5 py-2  rounded text-white mb-2 ${
+                isOn ? "bg-success" : "bg-danger"
+              }`}
+              style={{ fontSize: "0.45rem" }}
+            >
+              {isOn ? "ON" : "OFF"}
+            </button>
+            <p className="" style={{ fontSize: "0.52rem" }}>Click here to change content </p>
+            </div>
             <input
               className="form-control w-100"
               placeholder="Paste your URL"
