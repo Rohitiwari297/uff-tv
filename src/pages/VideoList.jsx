@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
 import axios from "axios";
@@ -11,8 +10,9 @@ export default function VideoList() {
 
   const [showModal, setShowModal] = useState(false);
   const [editingVideo, setEditingVideo] = useState(null);
+  const [saving, setSaving] = useState(false); // loader for add/edit
 
-  // api call for videos
+  // API call to fetch videos
   const fetchVideos = () => {
     setLoading(true);
     axios
@@ -35,7 +35,7 @@ export default function VideoList() {
     category: "",
     title: "",
     description: "",
-    url: "",
+    video: null,
     thumbnail: null,
     type: "",
     tags: "",
@@ -47,7 +47,7 @@ export default function VideoList() {
       category: "",
       title: "",
       description: "",
-      url: "",
+      video: null,
       thumbnail: null,
       type: "",
       tags: "",
@@ -61,7 +61,7 @@ export default function VideoList() {
       category: video.category?._id || video.category || "",
       title: video.title || "",
       description: video.description || "",
-      url: video.url || "",
+      video: null, // user can re-upload
       thumbnail: null, // user can re-upload
       type: video.type || "",
       tags: video.tags ? video.tags.join(", ") : "",
@@ -72,63 +72,101 @@ export default function VideoList() {
   const handleClose = () => setShowModal(false);
 
   const handleSave = () => {
+    // Enforce required video and thumbnail files
+    if (!formData.video || !formData.thumbnail) {
+      alert("Please upload both video and thumbnail files.");
+      return;
+    }
+
+    setSaving(true);
+
     const fd = new FormData();
     fd.append("category", formData.category);
     fd.append("title", formData.title);
     fd.append("description", formData.description);
-    fd.append("url", formData.url);
-    if (formData.thumbnail) fd.append("thumbnail", formData.thumbnail);
+    fd.append("video", formData.video);
+    fd.append("thumbnail", formData.thumbnail);
     fd.append("type", formData.type);
     fd.append("tags", formData.tags);
 
-    if (editingVideo) {
-      // Update existing video
-      axios
-        .put(`${baseURl}api/videos/${editingVideo._id}/`, fd, {
-          headers: { "Content-Type": "multipart/form-data" },
-        })
-        .then(() => {
-          alert("Video updated successfully");
-          fetchVideos();
-          setShowModal(false);
-        })
-        .catch((err) => console.error("Error updating video:", err));
-    } else {
-      // ✅ Add new video with FormData
-      axios
-        .post(`${baseURl}api/videos/`, fd, {
-          headers: { "Content-Type": "multipart/form-data" },
-        })
-        .then(() => {
-          alert("Video added successfully");
-          fetchVideos();
-          setShowModal(false);
-        })
-        .catch((err) => console.error("Error adding video:", err));
+    // Debug: log FormData entries
+    console.log("---- Sending FormData ----");
+    for (let pair of fd.entries()) {
+      console.log(pair[0], pair[1]);
     }
+
+    const request = editingVideo
+      ? axios.put(`${baseURl}api/videos/${editingVideo._id}/`, fd, {
+          headers: { "Content-Type": "multipart/form-data" },
+        })
+      : axios.post(`${baseURl}api/videos/`, fd, {
+          headers: { "Content-Type": "multipart/form-data" },
+        });
+
+    request
+      .then(() => {
+        alert(
+          editingVideo
+            ? "Video updated successfully"
+            : "Video added successfully"
+        );
+        fetchVideos();
+        setShowModal(false);
+      })
+      .catch((err) => {
+        console.error("Error saving video:", err.response?.data || err.message);
+        alert(
+          `Something went wrong while saving video: ${
+            err.response?.data?.message || err.message
+          }`
+        );
+      })
+      .finally(() => setSaving(false));
   };
 
   const handleDelete = (id) => {
     if (!window.confirm("Are you sure you want to delete this video?")) return;
-    console.log(id)
 
+    setLoading(true);
     axios
       .delete(`${baseURl}api/videos/${id}`)
       .then(() => {
         alert("Video deleted successfully");
         fetchVideos();
       })
-      .catch((err) => console.error("Error deleting video:", err));
+      .catch((err) => console.error("Error deleting video:", err))
+      .finally(() => setLoading(false));
   };
 
   const handleChange = (e) => {
     const { name, value, files } = e.target;
-    if (name === "thumbnail" && files.length > 0) {
-      setFormData({ ...formData, thumbnail: files[0] });
+
+    if ((name === "thumbnail" || name === "video") && files.length > 0) {
+      setFormData((prev) => ({
+        ...prev,
+        [name]: files[0],
+      }));
     } else {
-      setFormData({ ...formData, [name]: value });
+      setFormData((prev) => ({
+        ...prev,
+        [name]: value,
+      }));
     }
   };
+
+  //find all categories
+  const [categoryId, setCategoryId] = useState("");
+  useEffect(() => {
+    axios
+      .get(`${baseURl}api/category/`)
+      .then((res) => {
+        setCategoryId(res.data.data || []);
+        console.log(res.data.data);
+      })
+
+      .catch((err) => console.error("Error fetching categories:", err))
+      .finally(() => setLoading(false));
+  }, []);
 
   return (
     <div className="app-cards">
@@ -156,7 +194,6 @@ export default function VideoList() {
           </div>
         </div>
 
-        {/* Loader */}
         {loading ? (
           <div className="text-center">Loading...</div>
         ) : (
@@ -168,7 +205,7 @@ export default function VideoList() {
                   <th>Category</th>
                   <th>Title</th>
                   <th>Description</th>
-                  <th>Url</th>
+                  <th>Video</th>
                   <th>Thumbnail</th>
                   <th>Type</th>
                   <th>Tags</th>
@@ -231,7 +268,9 @@ export default function VideoList() {
                               <i className="bi bi-pencil-square"></i>
                             </button>
                             <button
-                              onClick={() => handleDelete(video._id || video.id )}
+                              onClick={() =>
+                                handleDelete(video._id || video.id)
+                              }
                               className="btn btn-sm btn-danger"
                             >
                               <i className="bi bi-trash"></i>
@@ -272,88 +311,97 @@ export default function VideoList() {
                 ></button>
               </div>
               <div className="modal-body">
-                <form>
-                  <div className="mb-3">
-                    <label className="form-label">Video Category</label>
-                    <input
-                      type="text"
-                      name="category"
-                      className="form-control"
-                      value={formData.category}
-                      onChange={handleChange}
-                      placeholder="Enter category ID or name"
-                    />
-                  </div>
-                  <div className="mb-3">
-                    <label className="form-label">Title</label>
-                    <input
-                      type="text"
-                      name="title"
-                      className="form-control"
-                      value={formData.title}
-                      onChange={handleChange}
-                    />
-                  </div>
-                  <div className="mb-3">
-                    <label className="form-label">Description</label>
-                    <textarea
-                      name="description"
-                      className="form-control"
-                      rows="3"
-                      value={formData.description}
-                      onChange={handleChange}
-                    ></textarea>
-                  </div>
-                  <div className="mb-3">
-                    <label className="form-label">Video URL</label>
-                    <input
-                      type="text"
-                      name="url"
-                      className="form-control"
-                      value={formData.url}
-                      onChange={handleChange}
-                    />
-                  </div>
-                  <div className="mb-3">
-                    <label className="form-label">Thumbnail</label>
-                    <input
-                      type="file"
-                      name="thumbnail"
-                      className="form-control"
-                      onChange={handleChange}
-                    />
-                  </div>
-                  <div className="mb-3">
-                    <label className="form-label">Type</label>
-                    <select
-                      name="type"
-                      className="form-select"
-                      value={formData.type}
-                      onChange={handleChange}
-                    >
-                      <option value="">Select Type</option>
-                      <option value="long_form">Long Form</option>
-                      <option value="short_form">Short Form</option>
-                    </select>
-                  </div>
-                  <div className="mb-3">
-                    <label className="form-label">Tags</label>
-                    <input
-                      type="text"
-                      name="tags"
-                      className="form-control"
-                      value={formData.tags}
-                      onChange={handleChange}
-                      placeholder="e.g. trending, recent"
-                    />
-                  </div>
-                </form>
+                {saving ? (
+                  <div className="text-center p-3">Saving...</div>
+                ) : (
+                  <form>
+                    <div className="mb-3">
+                      <label className="form-label">Video Category</label>
+                      <select
+                        name="category"
+                        className="form-select"
+                        value={formData.category}
+                        onChange={handleChange}
+                      >
+                        <option value="">Select Category</option>
+                        {categoryId.map((id) => (
+                          <option key={id._id} value={id._id}>
+                            {id.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="mb-3">
+                      <label className="form-label">Title</label>
+                      <input
+                        type="text"
+                        name="title"
+                        className="form-control"
+                        value={formData.title}
+                        onChange={handleChange}
+                      />
+                    </div>
+                    <div className="mb-3">
+                      <label className="form-label">Description</label>
+                      <textarea
+                        name="description"
+                        className="form-control"
+                        rows="3"
+                        value={formData.description}
+                        onChange={handleChange}
+                      ></textarea>
+                    </div>
+                    <div className="mb-3">
+                      <label className="form-label">Video (File) *</label>
+                      <input
+                        type="file"
+                        name="video"
+                        className="form-control"
+                        onChange={handleChange}
+                      />
+                    </div>
+                    <div className="mb-3">
+                      <label className="form-label">Thumbnail (File) *</label>
+                      <input
+                        type="file"
+                        name="thumbnail"
+                        className="form-control"
+                        onChange={handleChange}
+                      />
+                    </div>
+                    <div className="mb-3">
+                      <label className="form-label">Type</label>
+                      <select
+                        name="type"
+                        className="form-select"
+                        value={formData.type}
+                        onChange={handleChange}
+                      >
+                        <option value="">Select Type</option>
+                        <option value="long_form">Long Form</option>
+                        <option value="short_form">Short Form</option>
+                      </select>
+                    </div>
+                    <div className="mb-3">
+                      <label className="form-label">Tags</label>
+                      <input
+                        type="text"
+                        name="tags"
+                        className="form-control"
+                        value={formData.tags}
+                        onChange={handleChange}
+                        placeholder="e.g. trending, recent"
+                      />
+                    </div>
+                  </form>
+                )}
               </div>
               <div className="modal-footer">
                 <button
                   type="button"
                   className="btn btn-danger"
                   onClick={handleClose}
+                  disabled={saving}
                 >
                   Cancel
                 </button>
@@ -361,6 +409,7 @@ export default function VideoList() {
                   type="button"
                   className="btn btn-primary"
                   onClick={handleSave}
+                  disabled={saving}
                 >
                   {editingVideo ? "Update" : "Add"}
                 </button>

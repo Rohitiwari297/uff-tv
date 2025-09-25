@@ -13,6 +13,8 @@ import Banner from "./pages/Banner";
 import ChangePassword from "./pages/ChangePassword";
 import Login from "./pages/Login";
 import PrivateRoute from "./helpers/PrivateRoute"; // <-- import here
+import TopVideos from "./pages/TopVideos";
+import TopRetentions from "./pages/TopRetentions";
 
 export default function App() {
   return (
@@ -37,6 +39,9 @@ export default function App() {
         <Route path="/live-video" element={<LiveVideo />} />
         <Route path="/change-password" element={<ChangePassword />} />
         <Route path="/banner" element={<Banner />} />
+        <Route path="/topVideos" element={<TopVideos/>} />
+        <Route path="/topRetentions" element={<TopRetentions/>} />
+
       </Route>
 
       {/* Fallback */}

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { baseURl } from "../Api/url";
+import img from '../assets/uff-n.png'
 
 export default function Login() {
   const nav = useNavigate();
@@ -39,8 +40,7 @@ export default function Login() {
     <div className="auth-wrap d-flex align-items-center justify-content-center px-3 px-lg-0">
       <div className="auth-card">
         <div className="text-center mb-3">
-          <span className="brand-icon me-2 align-middle"></span>
-          <span className="brand-name align-middle">UFF TV</span>
+         <img className="brand-text ms-2" src={img } alt="Logo" style={{ width: "200px", height: "50px", objectFit: "contain" }} />
         </div>
 
         <div className="text-center mb-3">
@@ -78,11 +78,11 @@ export default function Login() {
               required
             />
             <span
-              className="input-group-text"
+              className="input-group-text bg-white"
               role="button"
               onClick={() => setShow((s) => !s)}
             >
-              <i className={`bi ${show ? "bi-eye-slash" : "bi-eye"}`}></i>
+              <i className={`bi ${show ? "bi-eye-slash" : "bi-eye"} text-black`}></i>
             </span>
           </div>
 

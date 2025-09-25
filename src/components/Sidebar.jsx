@@ -1,4 +1,5 @@
 import { NavLink } from "react-router-dom";
+import img from '../assets/uff-n.png'
 
 export default function Sidebar({ onItemClickClose = false }) {
   const closeOffcanvas = () => {
@@ -17,8 +18,10 @@ export default function Sidebar({ onItemClickClose = false }) {
       {/* Logo/Header - removed py-2 */}
       <div className="sidebar-brand d-flex align-items-center justify-content-between">
         <div className="d-flex align-items-center">
-          <span className="brand-icon"></span>
-          <strong className="brand-text ms-2">Uff tv</strong>
+          
+          <img className="brand-text ms-2" src={img } alt="Logo" style={{ width: "200px", height: "50px", objectFit: "contain" }} />
+
+          {/* {console.log(img)} */}
         </div>
 
         {/* Close button for mobile */}
@@ -85,6 +88,24 @@ export default function Sidebar({ onItemClickClose = false }) {
           >
             <i className="bi bi-image"></i>
             <span>Banners</span>
+          </NavLink>
+
+          <NavLink
+            to="/topVideos"
+            className="sidebar-link"
+            onClick={closeOffcanvas}
+          >
+            <i className="bi bi-youtube"></i>
+            <span>Top Videos</span>
+          </NavLink>
+
+          <NavLink
+            to="/topRetentions"
+            className="sidebar-link"
+            onClick={closeOffcanvas}
+          >
+            <i className="bi bi-arrow-repeat"></i>
+            <span>Top Retentions</span>
           </NavLink>
         </nav>
       </div>

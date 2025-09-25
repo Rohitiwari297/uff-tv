@@ -23,11 +23,16 @@ export default function CategoryList() {
     setLoading(true);
     axios
       .get(`${baseURl}api/category/`)
-      .then((res) => setCategory(res.data.data || []))
+      .then((res) => {setCategory(res.data.data || [])
+        console.log(res.data)
+      })
+      
       .catch((err) => console.error("Error fetching categories:", err))
       .finally(() => setLoading(false));
+
   };
 
+  // Open modal for adding new category
   const handleAdd = () => {
     setEditingCategory(null);
     setCategoryName("");
@@ -35,16 +40,17 @@ export default function CategoryList() {
     setShowModal(true);
   };
 
+  // Open modal for editing existing category
   const handleEdit = (cat) => {
     setEditingCategory(cat);
-    setCategoryName(cat.name);
-    setCategoryImage(null);
-    setShowModal(true);
+    setCategoryName(cat.name);   // prefill name
+    setCategoryImage(null);      // reset file input
+    setShowModal(true);          // show modal
   };
 
   const handleClose = () => setShowModal(false);
 
-  // Add category
+  // Add new category
   const addCategory = () => {
     if (!categoryName || !categoryImage) {
       alert("Please enter category name and image");
@@ -69,7 +75,7 @@ export default function CategoryList() {
       .catch((err) => console.error("Error adding category:", err));
   };
 
-  // Update category
+  // Update existing category
   const updateCategory = () => {
     if (!categoryName) {
       alert("Category name is required");
@@ -78,16 +84,24 @@ export default function CategoryList() {
 
     const formData = new FormData();
     formData.append("name", categoryName);
-    if (categoryImage) formData.append("image", categoryImage);
+    if (categoryImage) {
+      formData.append("image", categoryImage); // append image only if selected
+    }
 
     axios
-      .put(`${baseURl}api/category/${editingCategory.id}`, formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      })
+      .put(
+        `${baseURl}api/category/${editingCategory._id || editingCategory.id}`,
+        formData,
+        {
+          headers: { "Content-Type": "multipart/form-data" },
+        }
+      )
       .then((res) => {
         setCategory((prev) =>
           prev.map((cat) =>
-            cat.id === editingCategory.id ? res.data.data : cat
+            cat._id === (editingCategory._id || editingCategory.id)
+              ? res.data.data
+              : cat
           )
         );
         setShowModal(false);
@@ -98,26 +112,18 @@ export default function CategoryList() {
       .catch((err) => console.error("Error updating category:", err));
   };
 
-  //Delete Category
+  // Delete category
   const handleDelete = (id) => {
-    // console.log(id)
-    axios 
+    axios
       .delete(`${baseURl}api/category/${id}`)
-      .then((res)=>{
-        console.log(res.data)
-        alert("Record delete successfull")
-
-        //update state
-        setCategory((prev)=>{
-          const update = prev.filter((data)=> data.id !==id && data._id !== id)
-          return update;
-        })
+      .then((res) => {
+        alert("Record deleted successfully");
+        setCategory((prev) =>
+          prev.filter((data) => data.id !== id && data._id !== id)
+        );
       })
-      .catch((err)=> {
-        console.log("Error in Deletion",err)
-      })
-  }
-
+      .catch((err) => console.error("Error deleting category:", err));
+  };
 
   return (
     <div className="app-cards">
@@ -135,7 +141,7 @@ export default function CategoryList() {
       {/* Table */}
       <div className="app-card p-3">
         {loading ? (
-          <div className="text-center">loading...</div>
+          <div className="text-center">Loading...</div>
         ) : (
           <>
             <div className="mb-3">
@@ -143,6 +149,7 @@ export default function CategoryList() {
                 type="text"
                 className="form-control"
                 placeholder="Search..."
+                value={search}
                 onChange={(e) => setSearch(e.target.value)}
               />
             </div>
@@ -164,7 +171,7 @@ export default function CategoryList() {
                         : true
                     )
                     .map((data, index) => (
-                      <tr key={data.id || index}>
+                      <tr key={data.id || data._id || index}>
                         <td>{index + 1}</td>
                         <td>{data.name}</td>
                         <td>
@@ -192,7 +199,11 @@ export default function CategoryList() {
                               <i className="bi bi-pencil-square"></i>
                             </button>
                             <button
-                              onClick={()=> handleDelete(data.id || data._id)} className="btn btn-sm btn-danger">
+                              onClick={() =>
+                                handleDelete(data.id || data._id)
+                              }
+                              className="btn btn-sm btn-danger"
+                            >
                               <i className="bi bi-trash"></i>
                             </button>
                           </div>
