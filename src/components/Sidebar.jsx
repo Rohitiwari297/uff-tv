@@ -107,6 +107,22 @@ export default function Sidebar({ onItemClickClose = false }) {
             <i className="bi bi-arrow-repeat"></i>
             <span>Top Retentions</span>
           </NavLink>
+          <NavLink
+            to="/pop-up"
+            className="sidebar-link"
+            onClick={closeOffcanvas}
+          >
+             <i className="bi bi-box-arrow-up-right"></i>
+            <span>Notification</span>
+          </NavLink>
+          <NavLink
+            to="/feedback"
+            className="sidebar-link"
+            onClick={closeOffcanvas}
+          >
+            <i className="bi bi-chat-dots"></i>
+            <span>Feedback</span>
+          </NavLink>
         </nav>
       </div>
     </div>

@@ -154,7 +154,7 @@ export default function VideoList() {
     }
   };
 
-  //find all categories
+  //find all categories for category dropdown for videos uploading
   const [categoryId, setCategoryId] = useState("");
   useEffect(() => {
     axios
@@ -245,8 +245,9 @@ export default function VideoList() {
                           <img
                             src={
                               video.thumbnail
-                                ? `${baseURl}${video.thumbnail}`
-                                : "https://via.placeholder.com/40"
+                                ? `${video.thumbnail}`
+                                : `${video.thumbnail}`
+                                
                             }
                             alt={video.title || "thumbnail"}
                             className="avatar rounded"

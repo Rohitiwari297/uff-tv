@@ -15,6 +15,8 @@ import Login from "./pages/Login";
 import PrivateRoute from "./helpers/PrivateRoute"; // <-- import here
 import TopVideos from "./pages/TopVideos";
 import TopRetentions from "./pages/TopRetentions";
+import Popup from "./pages/Popup";
+import Feedback from "./pages/Feedback";
 
 export default function App() {
   return (
@@ -41,6 +43,10 @@ export default function App() {
         <Route path="/banner" element={<Banner />} />
         <Route path="/topVideos" element={<TopVideos/>} />
         <Route path="/topRetentions" element={<TopRetentions/>} />
+        <Route path="/pop-up" element={<Popup/>} />
+        <Route path="/feedback" element={<Feedback/>} />
+
+
 
       </Route>
 

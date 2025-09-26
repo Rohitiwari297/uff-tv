@@ -1,85 +1,106 @@
-import axios from 'axios'
-import React, { useEffect, useState } from 'react'
-import { baseURl } from '../Api/url'
+import axios from "axios";
+import React, { useEffect, useState } from "react";
+import { baseURl } from "../Api/url";
 
-function TopVideos() {
+export default function TopVideos() {
+  const [topVideos, setTopVideos] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-    const [topVideo, setTopVideo] = useState([])
+  useEffect(() => {
+    axios
+      .get(`${baseURl}api/admin/analytics/top-videos`)
+      .then((res) => {
+        setTopVideos(res.data.data || []);
+        setLoading(false);
+      })
+      .catch((err) => {
+        console.error(err);
+        setLoading(false);
+      });
+  }, []);
 
-    useEffect(()=>{
-       axios
-        .get(`${baseURl}api/admin/analytics/top-videos`) 
-        .then((res)=>{
-            // Removed alert to avoid annoying pop-ups
-            setTopVideo(res.data.data)
-            console.log(res.data)
-        })
-        .catch((err)=>{
-            console.error(err)
-        })
-    },[])
+  if (loading) {
+    return <div className="text-center p-5">Loading top videos...</div>;
+  }
+
+  if (topVideos.length === 0) {
+    return <div className="text-center p-5 text-muted">No top videos available</div>;
+  }
 
   return (
-    <div className="container">
-        <div className='' style={{margin: "-8px  -35px"}}>
-            <h5
-              className="mb-4 fw-bold text-center"
-              style={{
-                width: "100%",
-                position: "relative",
-                padding: "8px 0",
-                fontSize: "1.1rem",
-                boxShadow: "0px 4px 6px -3px rgba(0,0,0,0.4), 0px -4px 6px -3px rgba(0,0,0,0.4)"
-              }}
-            >
-              🔥 Top Videos
-            </h5>
-        </div>
+    <div className="container mt-4">
+      <h5
+        className="mb-4 fw-bold text-center py-2 rounded"
+        style={{
+          boxShadow: "0px 4px 6px -3px rgba(0,0,0,0.4), 0px -4px 6px -3px rgba(0,0,0,0.4)",
+          fontSize: "1.1rem",
+          backgroundColor: "#fff",
+        }}
+      >
+        🔥 Top Videos
+      </h5>
 
-        <div className="row">
-          {topVideo.map((ele) => (
-            <div className="col-md-4 mb-3" key={ele._id}>
-              <div className="card shadow-sm border-0 h-100 rounded-2 overflow-hidden">
-                {/* Thumbnail */}
-                <img
-                  src={ele.thumbnail}
-                  alt={ele.title}
-                  className="card-img-top"
-                  style={{
-                    height: "150px", // reduced from 200px
-                    objectFit: "cover",
-                    borderBottom: "1px solid #f0f0f0",
-                  }}
-                />
+      <div className="row">
+        {topVideos.map((video) => (
+          <div key={video._id} className="col-md-4 mb-4">
+            <div className="card shadow-sm h-100 rounded-2 overflow-hidden hover-shadow">
+              {/* Thumbnail */}
+              <img
+                src={video.thumbnail}
+                alt={video.title}
+                className="card-img-top"
+                style={{
+                  height: "160px",
+                  objectFit: "cover",
+                  borderBottom: "1px solid #e0e0e0",
+                }}
+              />
 
-                {/* Card Body */}
-                <div className="card-body p-2"> {/* reduced padding */}
-                  <h6 className="card-title fw-bold mb-2" style={{fontSize: "0.95rem"}}>{ele.title}</h6>
-                  <div style={{fontSize: "0.85rem"}}> {/* smaller text */}
-                    <p className="mb-1">
-                      <i className="bi bi-eye-fill text-primary"></i>{" "}
-                      <strong>{ele.totalViews}</strong> Views
-                    </p>
-                    <p className="mb-1">
-                      <i className="bi bi-clock-history text-warning"></i>{" "}
-                      Avg Watched: <strong>{ele.avgWatched} sec</strong>
-                    </p>
-                    <p className="mb-0">
-                      <i className="bi bi-graph-up text-success"></i>{" "}
-                      Completion: <strong>{ele.completionRate}%</strong>
-                    </p>
+              {/* Card Body */}
+              <div className="card-body p-3">
+                <h6 className="card-title fw-bold mb-2" style={{ fontSize: "1rem" }}>
+                  {video.title}
+                </h6>
+
+                <div style={{ fontSize: "0.9rem" }}>
+                  <p className="mb-1">
+                    <i className="bi bi-eye-fill text-primary"></i>{" "}
+                    <strong>{video.totalViews}</strong> Views
+                  </p>
+
+                  <p className="mb-1">
+                    <i className="bi bi-clock-history text-warning"></i>{" "}
+                    Avg Watched: <strong>{video.avgWatched} sec</strong>
+                  </p>
+
+                  <p className="mb-2">
+                    <i className="bi bi-graph-up text-success"></i>{" "}
+                    Completion: <strong>{video.completionRate}%</strong>
+                  </p>
+
+                  {/* Completion progress bar */}
+                  <div className="progress" style={{ height: "8px" }}>
+                    <div
+                      className={`progress-bar ${
+                        video.completionRate >= 70
+                          ? "bg-success"
+                          : video.completionRate >= 40
+                          ? "bg-warning"
+                          : "bg-danger"
+                      }`}
+                      role="progressbar"
+                      style={{ width: `${video.completionRate}%` }}
+                      aria-valuenow={video.completionRate}
+                      aria-valuemin="0"
+                      aria-valuemax="100"
+                    ></div>
                   </div>
                 </div>
               </div>
             </div>
-          ))}
-
-          {topVideo.length === 0 && (
-            <p className="text-muted text-center">No top videos available</p>
-          )}
-        </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
-
-export default TopVideos

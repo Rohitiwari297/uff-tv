@@ -114,6 +114,7 @@ export default function CategoryList() {
 
   // Delete category
   const handleDelete = (id) => {
+    if (!window.confirm("Are you sure you want to delete this video?")) return;
     axios
       .delete(`${baseURl}api/category/${id}`)
       .then((res) => {

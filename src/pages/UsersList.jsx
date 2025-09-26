@@ -88,12 +88,13 @@ export default function UsersList() {
                         : item.name.toLowerCase().includes(search);
                     })
                     .map((data, index) => (
+                      
                       <tr key={index}>
                         <td>{index + 1}</td>
                         <td>
                           <div className="user-info">
                             <img
-                              src={`${baseURl}${data.avatar}`}
+                              src={`${baseURl}${data.image}`}
                               alt="avatar"
                               className="avatar"
                             />
