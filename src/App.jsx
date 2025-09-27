@@ -1,5 +1,6 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 import MainLayout from "./layout/MainLayout";
+import "bootstrap/dist/css/bootstrap.min.css";
 
 // pages
 import Dashboard from "./pages/Dashboard";
@@ -17,6 +18,7 @@ import TopVideos from "./pages/TopVideos";
 import TopRetentions from "./pages/TopRetentions";
 import Popup from "./pages/Popup";
 import Feedback from "./pages/Feedback";
+import Contributions from "./pages/Contributions";
 
 export default function App() {
   return (
@@ -45,6 +47,7 @@ export default function App() {
         <Route path="/topRetentions" element={<TopRetentions/>} />
         <Route path="/pop-up" element={<Popup/>} />
         <Route path="/feedback" element={<Feedback/>} />
+        <Route path="/contribution" element={<Contributions/>} />
 
 
 

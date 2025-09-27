@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
 import axios from "axios";
 import { baseURl } from "../Api/url";
+import { sendNotification } from "../utils/sendNotification"; // ✅ import
 
 export default function VideoList() {
   const [allVideosList, setAllVideosList] = useState([]);
@@ -10,9 +11,8 @@ export default function VideoList() {
 
   const [showModal, setShowModal] = useState(false);
   const [editingVideo, setEditingVideo] = useState(null);
-  const [saving, setSaving] = useState(false); // loader for add/edit
+  const [saving, setSaving] = useState(false);
 
-  // API call to fetch videos
   const fetchVideos = () => {
     setLoading(true);
     axios
@@ -61,8 +61,8 @@ export default function VideoList() {
       category: video.category?._id || video.category || "",
       title: video.title || "",
       description: video.description || "",
-      video: null, // user can re-upload
-      thumbnail: null, // user can re-upload
+      video: video.url || null,
+      thumbnail: video.thumbnail || null,
       type: video.type || "",
       tags: video.tags ? video.tags.join(", ") : "",
     });
@@ -72,8 +72,7 @@ export default function VideoList() {
   const handleClose = () => setShowModal(false);
 
   const handleSave = () => {
-    // Enforce required video and thumbnail files
-    if (!formData.video || !formData.thumbnail) {
+    if (!editingVideo && (!formData.video || !formData.thumbnail)) {
       alert("Please upload both video and thumbnail files.");
       return;
     }
@@ -84,16 +83,12 @@ export default function VideoList() {
     fd.append("category", formData.category);
     fd.append("title", formData.title);
     fd.append("description", formData.description);
-    fd.append("video", formData.video);
-    fd.append("thumbnail", formData.thumbnail);
+
+    if (formData.video instanceof File) fd.append("video", formData.video);
+    if (formData.thumbnail instanceof File) fd.append("thumbnail", formData.thumbnail);
+
     fd.append("type", formData.type);
     fd.append("tags", formData.tags);
-
-    // Debug: log FormData entries
-    console.log("---- Sending FormData ----");
-    for (let pair of fd.entries()) {
-      console.log(pair[0], pair[1]);
-    }
 
     const request = editingVideo
       ? axios.put(`${baseURl}api/videos/${editingVideo._id}/`, fd, {
@@ -104,12 +99,22 @@ export default function VideoList() {
         });
 
     request
-      .then(() => {
-        alert(
-          editingVideo
-            ? "Video updated successfully"
-            : "Video added successfully"
-        );
+      .then(async () => {
+        alert(editingVideo ? "Video updated successfully" : "Video added successfully");
+
+        // Trigger notification after successful upload
+        const res = await sendNotification({
+          title: "New Video Uploaded 🎥",
+          body: `Video "${formData.title}" has been uploaded successfully.`,
+          dataName: formData.title,
+        });
+
+        if (res.success) {
+          console.log("Notification sent:", res.message);
+        } else {
+          console.error("Notification failed:", res.message);
+        }
+
         fetchVideos();
         setShowModal(false);
       })
@@ -124,6 +129,7 @@ export default function VideoList() {
       .finally(() => setSaving(false));
   };
 
+  //Delete Handler
   const handleDelete = (id) => {
     if (!window.confirm("Are you sure you want to delete this video?")) return;
 
@@ -140,41 +146,29 @@ export default function VideoList() {
 
   const handleChange = (e) => {
     const { name, value, files } = e.target;
-
     if ((name === "thumbnail" || name === "video") && files.length > 0) {
-      setFormData((prev) => ({
-        ...prev,
-        [name]: files[0],
-      }));
+      setFormData((prev) => ({ ...prev, [name]: files[0] }));
     } else {
-      setFormData((prev) => ({
-        ...prev,
-        [name]: value,
-      }));
+      setFormData((prev) => ({ ...prev, [name]: value }));
     }
   };
 
-  //find all categories for category dropdown for videos uploading
   const [categoryId, setCategoryId] = useState("");
   useEffect(() => {
     axios
       .get(`${baseURl}api/category/`)
-      .then((res) => {
-        setCategoryId(res.data.data || []);
-        console.log(res.data.data);
-      })
-
+      .then((res) => setCategoryId(res.data.data || []))
       .catch((err) => console.error("Error fetching categories:", err))
       .finally(() => setLoading(false));
   }, []);
 
   return (
     <div className="app-cards">
-      {/* Title + Breadcrumb + Add Video Button */}
+      {/* Title + Add Video */}
       <div className="d-flex justify-content-between align-items-center mb-3">
         <div>
           <h5 className="mb-1">Video List</h5>
-          <div className="text-muted small"> Dashboard / Video</div>
+          <div className="text-muted small">Dashboard / Video</div>
         </div>
         <button className="btn btn-primary" onClick={handleAdd}>
           <i className="bi bi-plus me-2"></i>Add Video
@@ -215,13 +209,17 @@ export default function VideoList() {
               <tbody>
                 {allVideosList.length > 0 ? (
                   allVideosList
-                    .filter((video) =>
-                      searchTerm === ""
-                        ? video
-                        : video.title
-                            ?.toLowerCase()
-                            .includes(searchTerm.toLowerCase())
-                    )
+                    .filter((video) => {
+                      if (!searchTerm) return true;
+                      const term = searchTerm.toLowerCase();
+                      return (
+                        (video.category?.name || "").toLowerCase().includes(term) ||
+                        (video.title || "").toLowerCase().includes(term) ||
+                        (video.description || "").toLowerCase().includes(term) ||
+                        (video.type || "").toLowerCase().includes(term) ||
+                        (video.tags?.join(", ") || "").toLowerCase().includes(term)
+                      );
+                    })
                     .map((video, idx) => (
                       <tr key={video._id || idx}>
                         <td>{idx + 1}</td>
@@ -230,11 +228,7 @@ export default function VideoList() {
                         <td>{video.description || "No description"}</td>
                         <td>
                           {video.url ? (
-                            <a
-                              href={video.url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                            >
+                            <a href={video.url} target="_blank" rel="noopener noreferrer">
                               MP4
                             </a>
                           ) : (
@@ -243,23 +237,14 @@ export default function VideoList() {
                         </td>
                         <td>
                           <img
-                            src={
-                              video.thumbnail
-                                ? `${video.thumbnail}`
-                                : `${video.thumbnail}`
-                                
-                            }
+                            src={video.thumbnail || ""}
                             alt={video.title || "thumbnail"}
                             className="avatar rounded"
                             width="40"
                           />
                         </td>
                         <td>{video.type || "N/A"}</td>
-                        <td>
-                          {video.tags?.length > 0
-                            ? video.tags.join(", ")
-                            : "N/A"}
-                        </td>
+                        <td>{video.tags?.length > 0 ? video.tags.join(", ") : "N/A"}</td>
                         <td>
                           <div className="d-flex">
                             <button
@@ -269,9 +254,7 @@ export default function VideoList() {
                               <i className="bi bi-pencil-square"></i>
                             </button>
                             <button
-                              onClick={() =>
-                                handleDelete(video._id || video.id)
-                              }
+                              onClick={() => handleDelete(video._id || video.id)}
                               className="btn btn-sm btn-danger"
                             >
                               <i className="bi bi-trash"></i>
@@ -302,14 +285,8 @@ export default function VideoList() {
           <div className="modal-dialog modal-dialog-centered">
             <div className="modal-content">
               <div className="modal-header">
-                <h5 className="modal-title">
-                  {editingVideo ? "Edit Video" : "Add Video"}
-                </h5>
-                <button
-                  type="button"
-                  className="btn-close"
-                  onClick={handleClose}
-                ></button>
+                <h5 className="modal-title">{editingVideo ? "Edit Video" : "Add Video"}</h5>
+                <button type="button" className="btn-close" onClick={handleClose}></button>
               </div>
               <div className="modal-body">
                 {saving ? (
@@ -325,11 +302,12 @@ export default function VideoList() {
                         onChange={handleChange}
                       >
                         <option value="">Select Category</option>
-                        {categoryId.map((id) => (
-                          <option key={id._id} value={id._id}>
-                            {id.name}
-                          </option>
-                        ))}
+                        {Array.isArray(categoryId) &&
+                          categoryId.map((id) => (
+                            <option key={id._id} value={id._id}>
+                              {id.name}
+                            </option>
+                          ))}
                       </select>
                     </div>
                     <div className="mb-3">
@@ -398,20 +376,10 @@ export default function VideoList() {
                 )}
               </div>
               <div className="modal-footer">
-                <button
-                  type="button"
-                  className="btn btn-danger"
-                  onClick={handleClose}
-                  disabled={saving}
-                >
+                <button type="button" className="btn btn-danger" onClick={handleClose} disabled={saving}>
                   Cancel
                 </button>
-                <button
-                  type="button"
-                  className="btn btn-primary"
-                  onClick={handleSave}
-                  disabled={saving}
-                >
+                <button type="button" className="btn btn-primary" onClick={handleSave} disabled={saving}>
                   {editingVideo ? "Update" : "Add"}
                 </button>
               </div>

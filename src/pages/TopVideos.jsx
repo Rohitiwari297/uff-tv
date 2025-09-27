@@ -28,18 +28,8 @@ export default function TopVideos() {
   }
 
   return (
-    <div className="container mt-4">
-      <h5
-        className="mb-4 fw-bold text-center py-2 rounded"
-        style={{
-          boxShadow: "0px 4px 6px -3px rgba(0,0,0,0.4), 0px -4px 6px -3px rgba(0,0,0,0.4)",
-          fontSize: "1.1rem",
-          backgroundColor: "#fff",
-        }}
-      >
-        🔥 Top Videos
-      </h5>
-
+    <div className="container mt-4" >
+      <h3 className="text-center fw-bold mb-4">🔥 Top Videos</h3>
       <div className="row">
         {topVideos.map((video) => (
           <div key={video._id} className="col-md-4 mb-4">

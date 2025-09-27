@@ -339,3 +339,7 @@ tbody, td, tfoot, th, thead, tr {
   box-shadow: 0 4px 15px rgba(255, 140, 0, 0.5);
 }
 
+.table-color{
+  background: linear-gradient(90deg, rgb(75, 108, 183), rgb(24, 40, 72));
+}
+

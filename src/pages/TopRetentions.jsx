@@ -43,7 +43,7 @@ export default function VideoAnalytics() {
 
   return (
     <div className="container mt-4">
-      <h3 className="mb-4 text-center">🎬 Video Analytics Dashboard</h3>
+      <h3 className="text-center fw-bold mb-4">🎬 Video Analytics Dashboard</h3>
 
       {/* Search */}
       {/* <div className="mb-4 d-flex justify-content-end">
@@ -58,37 +58,41 @@ export default function VideoAnalytics() {
 
       {/* Table Layout */}
       <div className="table-responsive mb-5">
-        <table className="table table-striped table-hover align-middle">
-          <thead className="table-dark text-white">
-            <tr>
-              <th className="text-white">#</th>
-              <th className="text-white">Title</th>
-              <th className="text-white">Avg Watched Seconds</th>
-              <th className="text-white">Retention %</th>
-              <th className="text-white">Video ID</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredVideos.map((video, idx) => (
-              <tr key={video._id}>
-                <td>{idx + 1}</td>
-                <td>{video.title || "Untitled"}</td>
-                <td>{video.avgWatchedSeconds || 0}</td>
-                <td>
-                  <span
-                    className={`badge bg-${getBadgeColor(
-                      video.retentionPercent
-                    )}`}
-                  >
-                    {video.retentionPercent || 0}%
-                  </span>
-                </td>
-                <td>{video.videoId}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+  <table className="table table-striped table-hover align-middle">
+    <thead>
+      <tr
+        style={{
+          background: "linear-gradient(90deg, rgb(75, 108, 183), rgb(24, 40, 72))",
+          color: "white"
+        }}
+      >
+        <th className="text-white" style={{ background: "transparent" }}>#</th>
+        <th className="text-white" style={{ background: "transparent" }}>Title</th>
+        <th className="text-white" style={{ background: "transparent" }}>Avg Watched Seconds</th>
+        <th className="text-white" style={{ background: "transparent" }}>Retention %</th>
+        <th className="text-white" style={{ background: "transparent" }}>Video ID</th>
+      </tr>
+    </thead>
+    <tbody>
+      {filteredVideos.map((video, idx) => (
+        <tr key={video._id}>
+          <td>{idx + 1}</td>
+          <td>{video.title || "Untitled"}</td>
+          <td>{video.avgWatchedSeconds || 0}</td>
+          <td>
+            <span
+              className={`badge bg-${getBadgeColor(video.retentionPercent)}`}
+            >
+              {video.retentionPercent || 0}%
+            </span>
+          </td>
+          <td>{video.videoId}</td>
+        </tr>
+      ))}
+    </tbody>
+  </table>
+</div>
+
 
       {/* Card Layout */}
       <div className="row">
@@ -135,3 +139,4 @@ export default function VideoAnalytics() {
     </div>
   );
 }
+ 

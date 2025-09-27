@@ -21,57 +21,147 @@ export default function Dashboard() {
   console.log(dashboard)
 
   return (
-    <div className="app-cards">
-      <div className="mb-4 mt-2">
-        <h5 className="mb-1">Hi, Uff TV </h5>
-        <div className="text-muted small">Welcome Back To Your Dashboard</div>
+  <div className="app-cards">
+    <div className="mb-4 mt-2">
+      <h5
+  className="mb-1 fw-bold"
+  style={{
+    background: "linear-gradient(90deg, #4b6cb7, #182848)",
+    WebkitBackgroundClip: "text",
+    WebkitTextFillColor: "transparent",
+    fontSize: "1.5rem",
+    fontFamily: "'Poppins', sans-serif",
+  }}
+>
+  Hi, Simhasth 👋
+</h5>
+<div
+  className="small"
+  style={{
+    fontFamily: "'Roboto', sans-serif",
+    fontSize: "0.9rem",
+    color: "#6c757d",
+    letterSpacing: "0.5px",
+  }}
+>
+  Welcome back to your dashboard
+</div>
+    </div>
+
+    <div className="row g-3">
+      {/* Total Users */}
+      <div className="col-12 col-md-6 col-xl-4">
+        <div
+          className="app-card d-flex justify-content-between align-items-center p-3 rounded-4 shadow-sm"
+          style={{
+            background: "linear-gradient(135deg, #4b6cb7, #182848)",
+            color: "white",
+          }}
+        >
+          <div>
+            <div className="small mb-1 opacity-75">Total Users</div>
+            <div className="fs-3 fw-bold">{dashboard.userCount}</div>
+          </div>
+          <span
+            className="d-flex justify-content-center align-items-center rounded-circle"
+            style={{
+              width: "50px",
+              height: "50px",
+              background: "rgba(255,255,255,0.15)",
+              color: "white",
+              fontSize: "1.2rem",
+            }}
+          >
+            <i className="bi bi-person"></i>
+          </span>
+        </div>
       </div>
 
-      <div className="row g-3">
-        <div className="col-12 col-md-6 col-xl-4">
-          <div className="app-card d-flex justify-content-between align-items-center">
-            <div>
-              <div className="text-muted small mb-1">Total Users</div>
-              <div className="fs-4 fw-semibold">{dashboard.userCount}</div>
-              {/* <div className="text-danger small mt-1"><i className="bi bi-graph-down-arrow"></i> 1.63% this year</div> */}
-            </div>
-            <span className="btn btn-primary rounded-4"><i className="bi bi-person"></i></span>
+      {/* Total Category */}
+      <div className="col-12 col-md-6 col-xl-4">
+        <div
+          className="app-card d-flex justify-content-between align-items-center p-3 rounded-4 shadow-sm"
+          style={{
+            background: "linear-gradient(135deg, #36d1dc, #5b86e5)",
+            color: "white",
+          }}
+        >
+          <div>
+            <div className="small mb-1 opacity-75">Total Category</div>
+            <div className="fs-3 fw-bold">{dashboard.categoryCount}</div>
           </div>
+          <span
+            className="d-flex justify-content-center align-items-center rounded-circle"
+            style={{
+              width: "50px",
+              height: "50px",
+              background: "rgba(255,255,255,0.15)",
+              color: "white",
+              fontSize: "1.2rem",
+            }}
+          >
+            <i className="bi bi-grid"></i>
+          </span>
         </div>
+      </div>
 
-         <div className="col-12 col-md-6 col-xl-4">
-          <div className="app-card d-flex justify-content-between align-items-center">
-            <div>
-              <div className="text-muted small mb-1">Total Category</div>
-              <div className="fs-4 fw-semibold">{dashboard.categoryCount}</div>
-              {/* <div className="text-success small mt-1"><i className="bi bi-graph-up-arrow"></i> 0.75% this year</div> */}
-            </div>
-            <span className="btn btn-primary rounded-4"><i className="bi bi-grid"></i></span>
+      {/* Total Video */}
+      <div className="col-12 col-md-6 col-xl-4">
+        <div
+          className="app-card d-flex justify-content-between align-items-center p-3 rounded-4 shadow-sm"
+          style={{
+            background: "linear-gradient(135deg, #ff9966, #ff5e62)",
+            color: "white",
+          }}
+        >
+          <div>
+            <div className="small mb-1 opacity-75">Total Video</div>
+            <div className="fs-3 fw-bold">{dashboard.videoCount}</div>
           </div>
+          <span
+            className="d-flex justify-content-center align-items-center rounded-circle"
+            style={{
+              width: "50px",
+              height: "50px",
+              background: "rgba(255,255,255,0.15)",
+              color: "white",
+              fontSize: "1.2rem",
+            }}
+          >
+            <i className="bi bi-camera-video"></i>
+          </span>
         </div>
+      </div>
 
-        <div className="col-12 col-md-6 col-xl-4">
-          <div className="app-card d-flex justify-content-between align-items-center">
-            <div>
-              <div className="text-muted small mb-1">Total Video</div>
-              <div className="fs-4 fw-semibold">{dashboard.videoCount}</div>
-              {/* <div className="text-danger small mt-1"><i className="bi bi-graph-down-arrow"></i> 1.63% this year</div> */}
-            </div>
-            <span className="btn btn-primary rounded-4"><i className="bi bi-camera-video"></i></span>
+      {/* Total Banner */}
+      <div className="col-12 col-md-6 col-xl-4">
+        <div
+          className="app-card d-flex justify-content-between align-items-center p-3 rounded-4 shadow-sm"
+          style={{
+            background: "linear-gradient(135deg, #11998e, #38ef7d)",
+            color: "white",
+          }}
+        >
+          <div>
+            <div className="small mb-1 opacity-75">Total Banner</div>
+            <div className="fs-3 fw-bold">{dashboard.bannerCount}</div>
           </div>
-        </div>
-
-        <div className="col-12 col-md-6 col-xl-4">
-          <div className="app-card d-flex justify-content-between align-items-center">
-            <div>
-              <div className="text-muted small mb-1">Total Banner</div>
-              <div className="fs-4 fw-semibold">{dashboard.bannerCount}</div>
-              {/* <div className="text-danger small mt-1"><i className="bi bi-graph-down-arrow"></i> 1.63% this year</div> */}
-            </div>
-            <span className="btn btn-primary rounded-4"><i className="bi bi-camera-video"></i></span>
-          </div>
+          <span
+            className="d-flex justify-content-center align-items-center rounded-circle"
+            style={{
+              width: "50px",
+              height: "50px",
+              background: "rgba(255,255,255,0.15)",
+              color: "white",
+              fontSize: "1.2rem",
+            }}
+          >
+            <i className="bi bi-image"></i>
+          </span>
         </div>
       </div>
     </div>
-  );
+  </div>
+);
+
 }

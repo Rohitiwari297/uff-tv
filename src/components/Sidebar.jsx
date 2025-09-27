@@ -123,6 +123,14 @@ export default function Sidebar({ onItemClickClose = false }) {
             <i className="bi bi-chat-dots"></i>
             <span>Feedback</span>
           </NavLink>
+          <NavLink
+            to="/contribution"
+            className="sidebar-link"
+            onClick={closeOffcanvas}
+          >
+            <i className="bi bi-people"></i>
+            <span>Contribution</span>
+          </NavLink>
         </nav>
       </div>
     </div>

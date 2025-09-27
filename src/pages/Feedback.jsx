@@ -125,14 +125,18 @@ export default function Feedback() {
         <div className="table-responsive">
           <table className="table table-hover align-middle">
             <thead className="table-dark">
-              <tr>
-                <th className="text-white">#</th>
-                <th className="text-white">User</th>
-                <th className="text-white">Email</th>
-                <th className="text-white">Subject</th>
-                <th className="text-white">Description</th>
-                <th className="text-white">Created At</th>
-                <th className="text-white">Actions</th>
+              <tr style={{
+                  background:
+                    "linear-gradient(90deg, rgb(75, 108, 183), rgb(24, 40, 72))",
+                  color: "white",
+                }}>
+                <th className="text-white" style={{ background: "transparent" }}>#</th>
+                <th className="text-white" style={{ background: "transparent" }} >User</th>
+                <th className="text-white" style={{ background: "transparent" }} >Email</th>
+                <th className="text-white" style={{ background: "transparent" }} >Subject</th>
+                <th className="text-white" style={{ background: "transparent" }} >Description</th>
+                <th className="text-white" style={{ background: "transparent" }} >Created At</th>
+                <th className="text-white" style={{ background: "transparent" }} >Actions</th>
               </tr>
             </thead>
             <tbody>
