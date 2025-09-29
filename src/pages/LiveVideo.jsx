@@ -14,7 +14,7 @@ export default function LiveVideo() {
   const [liveRunVideo, setLiveRunVideo] = useState("");
   const [changeURL, setChangeURL] = useState("");
   const [urlReceived, setUrlReceived] = useState("");
-  const [isOn, setIsOn] = useState(false); // override state from backend
+  const [isOn, setIsOn] = useState(false);
 
   const videoRef = useRef(null);
 
@@ -25,6 +25,14 @@ export default function LiveVideo() {
       : liveRunVideo
       ? String(liveRunVideo)
       : "";
+
+  // Extract YouTube ID if link is YouTube
+  const getYouTubeId = (url) => {
+    const regExp =
+      /^.*(youtu\.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+    const match = url.match(regExp);
+    return match && match[2].length === 11 ? match[2] : null;
+  };
 
   // Fetch scheduled slots
   useEffect(() => {
@@ -60,7 +68,7 @@ export default function LiveVideo() {
 
   // Handle HLS / MP4
   useEffect(() => {
-    if (!videoSrc) return;
+    if (!videoSrc || getYouTubeId(videoSrc)) return; // skip YouTube
     const video = videoRef.current;
 
     if (Hls.isSupported() && videoSrc.endsWith(".m3u8")) {
@@ -106,7 +114,7 @@ export default function LiveVideo() {
   // Delete video
   const handleDelete = (id) => {
     const confirmDelete = window.confirm("Do you want to delete the video?");
-    if (!confirmDelete) return; // stop if user cancels
+    if (!confirmDelete) return;
 
     axios
       .delete(`${baseURl}api/live-stream/schedule/slot`, {
@@ -183,7 +191,6 @@ export default function LiveVideo() {
         { headers: { "Content-Type": "application/json" } }
       )
       .then(() => {
-        // Update state instantly
         setIsOn(true);
         setUrlReceived(changeURL);
 
@@ -208,7 +215,7 @@ export default function LiveVideo() {
       )
       .then(() => {
         setIsOn(newOverride);
-        fetchLiveData(); //  refresh latest data
+        fetchLiveData();
       })
       .catch((err) => console.error("Failed to update override:", err));
   };
@@ -221,7 +228,6 @@ export default function LiveVideo() {
         <div className=" col-lg-6 align-content-center">
           <div className="col-lg-12 d-flex justify-content-between align-items-center">
             <h5 className="mb-1">Live Video</h5>
-            
           </div>
 
           <div className="position-relative d-inline-block">
@@ -232,13 +238,32 @@ export default function LiveVideo() {
               Live <span className="dot bg-white"></span>
             </span>
 
-            <video
-              ref={videoRef}
-              controls
-              autoPlay
-              muted
-              style={{ width: "250px", height: "150px", borderRadius: "10px" }}
-            />
+            {getYouTubeId(videoSrc) ? (
+              <iframe
+                width="250"
+                height="150"
+                style={{ borderRadius: "10px" }}
+                src={`https://www.youtube.com/embed/${getYouTubeId(
+                  videoSrc
+                )}?autoplay=1&mute=1`}
+                title="YouTube video"
+                frameBorder="0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+              ></iframe>
+            ) : (
+              <video
+                ref={videoRef}
+                controls
+                autoPlay
+                muted
+                style={{
+                  width: "250px",
+                  height: "150px",
+                  borderRadius: "10px",
+                }}
+              />
+            )}
           </div>
 
           <p className="small text-muted mt-1">
@@ -249,16 +274,18 @@ export default function LiveVideo() {
         <div className="col-lg-6 ">
           <div className="text-center">
             <div className="text-end">
-            <button
-              onClick={toggleOverride}
-              className={`px-5 py-2  rounded text-white mb-2 ${
-                isOn ? "bg-success" : "bg-danger"
-              }`}
-              style={{ fontSize: "0.45rem" }}
-            >
-              {isOn ? "ON" : "OFF"}
-            </button>
-            <p className="" style={{ fontSize: "0.52rem" }}>Click here to change content </p>
+              <button
+                onClick={toggleOverride}
+                className={`px-5 py-2  rounded text-white mb-2 ${
+                  isOn ? "bg-success" : "bg-danger"
+                }`}
+                style={{ fontSize: "0.45rem" }}
+              >
+                {isOn ? "ON" : "OFF"}
+              </button>
+              <p className="" style={{ fontSize: "0.52rem" }}>
+                Click here to change content{" "}
+              </p>
             </div>
             <input
               className="form-control w-100"

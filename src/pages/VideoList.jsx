@@ -2,34 +2,15 @@ import { useEffect, useState } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
 import axios from "axios";
 import { baseURl } from "../Api/url";
-import { sendNotification } from "../utils/sendNotification"; // ✅ import
+import { sendNotification } from "../utils/sendNotification";
 
 export default function VideoList() {
   const [allVideosList, setAllVideosList] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
-
   const [showModal, setShowModal] = useState(false);
   const [editingVideo, setEditingVideo] = useState(null);
   const [saving, setSaving] = useState(false);
-
-  const fetchVideos = () => {
-    setLoading(true);
-    axios
-      .get(`${baseURl}api/videos/`)
-      .then((res) => {
-        setAllVideosList(res.data.data || []);
-        setLoading(false);
-      })
-      .catch((err) => {
-        console.error(err);
-        setLoading(false);
-      });
-  };
-
-  useEffect(() => {
-    fetchVideos();
-  }, []);
 
   const [formData, setFormData] = useState({
     category: "",
@@ -40,6 +21,17 @@ export default function VideoList() {
     type: "",
     tags: "",
   });
+
+  const fetchVideos = () => {
+    setLoading(true);
+    axios
+      .get(`${baseURl}api/videos/`)
+      .then((res) => setAllVideosList(res.data.data || []))
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  };
+
+  useEffect(() => fetchVideos(), []);
 
   const handleAdd = () => {
     setEditingVideo(null);
@@ -71,65 +63,82 @@ export default function VideoList() {
 
   const handleClose = () => setShowModal(false);
 
-  const handleSave = () => {
-    if (!editingVideo && (!formData.video || !formData.thumbnail)) {
-      alert("Please upload both video and thumbnail files.");
-      return;
+const handleSave = async () => {
+  if (!editingVideo && (!formData.video || !formData.thumbnail)) {
+    alert("Please upload both video and thumbnail files.");
+    return;
+  }
+
+  setSaving(true);
+  const fd = new FormData();
+  fd.append("category", formData.category);
+  fd.append("title", formData.title);
+  fd.append("description", formData.description);
+
+  if (formData.video instanceof File) fd.append("video", formData.video);
+  if (formData.thumbnail instanceof File) fd.append("thumbnail", formData.thumbnail);
+
+  fd.append("type", formData.type);
+  fd.append("tags", formData.tags);
+
+  try {
+    let res;
+    if (editingVideo) {
+      res = await axios.put(`${baseURl}api/videos/${editingVideo._id}/`, fd, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      alert("Video updated successfully");
+
+      // //  Send notification after update
+      // const videoData = res.data.data || res.data;
+      // if (videoData) {
+      //   const notifRes = await sendNotification({
+      //     title: "Video Updated",
+      //     body: `Video "${formData.title}" has been updated successfully.`,
+      //     dataName: formData.title,
+      //     image: videoData.thumbnail,
+      //     videoId: videoData._id || videoData.id,
+      //   });
+      //   console.log("Notification result:", notifRes);
+      // }
+    } else {
+      res = await axios.post(`${baseURl}api/videos/`, fd, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+
+      console.log("Full API response:", res.data);
+
+      const videoData = res.data.data || res.data;
+      console.log("Extracted video data:", videoData);
+
+      alert("Video added successfully");
+
+      // Send notification after new upload
+      if (videoData) {
+        const notifRes = await sendNotification({
+          title: "New Video Uploaded",
+          body: `Video "${videoData.title}" has been uploaded successfully.`,
+          dataName: videoData._id || videoData.id,
+          image: videoData.thumbnail,
+          videoId: videoData._id || videoData.id,
+          type: videoData.type,
+        });
+        console.log("Notification result:", notifRes);
+      }
     }
 
-    setSaving(true);
+    fetchVideos();
+    setShowModal(false);
+  } catch (err) {
+    console.error("Error saving video:", err.response?.data || err.message);
+    alert(`Something went wrong: ${err.response?.data?.message || err.message}`);
+  } finally {
+    setSaving(false);
+  }
+};
 
-    const fd = new FormData();
-    fd.append("category", formData.category);
-    fd.append("title", formData.title);
-    fd.append("description", formData.description);
 
-    if (formData.video instanceof File) fd.append("video", formData.video);
-    if (formData.thumbnail instanceof File) fd.append("thumbnail", formData.thumbnail);
 
-    fd.append("type", formData.type);
-    fd.append("tags", formData.tags);
-
-    const request = editingVideo
-      ? axios.put(`${baseURl}api/videos/${editingVideo._id}/`, fd, {
-          headers: { "Content-Type": "multipart/form-data" },
-        })
-      : axios.post(`${baseURl}api/videos/`, fd, {
-          headers: { "Content-Type": "multipart/form-data" },
-        });
-
-    request
-      .then(async () => {
-        alert(editingVideo ? "Video updated successfully" : "Video added successfully");
-
-        // Trigger notification after successful upload
-        const res = await sendNotification({
-          title: "New Video Uploaded 🎥",
-          body: `Video "${formData.title}" has been uploaded successfully.`,
-          dataName: formData.title,
-        });
-
-        if (res.success) {
-          console.log("Notification sent:", res.message);
-        } else {
-          console.error("Notification failed:", res.message);
-        }
-
-        fetchVideos();
-        setShowModal(false);
-      })
-      .catch((err) => {
-        console.error("Error saving video:", err.response?.data || err.message);
-        alert(
-          `Something went wrong while saving video: ${
-            err.response?.data?.message || err.message
-          }`
-        );
-      })
-      .finally(() => setSaving(false));
-  };
-
-  //Delete Handler
   const handleDelete = (id) => {
     if (!window.confirm("Are you sure you want to delete this video?")) return;
 
@@ -140,7 +149,7 @@ export default function VideoList() {
         alert("Video deleted successfully");
         fetchVideos();
       })
-      .catch((err) => console.error("Error deleting video:", err))
+      .catch(console.error)
       .finally(() => setLoading(false));
   };
 
@@ -153,12 +162,12 @@ export default function VideoList() {
     }
   };
 
-  const [categoryId, setCategoryId] = useState("");
+  const [categoryList, setCategoryList] = useState([]);
   useEffect(() => {
     axios
       .get(`${baseURl}api/category/`)
-      .then((res) => setCategoryId(res.data.data || []))
-      .catch((err) => console.error("Error fetching categories:", err))
+      .then((res) => setCategoryList(res.data.data || []))
+      .catch(console.error)
       .finally(() => setLoading(false));
   }, []);
 
@@ -278,10 +287,7 @@ export default function VideoList() {
 
       {/* Add/Edit Modal */}
       {showModal && (
-        <div
-          className="modal fade show d-block"
-          style={{ background: "rgba(0,0,0,0.5)" }}
-        >
+        <div className="modal fade show d-block" style={{ background: "rgba(0,0,0,0.5)" }}>
           <div className="modal-dialog modal-dialog-centered">
             <div className="modal-content">
               <div className="modal-header">
@@ -302,14 +308,14 @@ export default function VideoList() {
                         onChange={handleChange}
                       >
                         <option value="">Select Category</option>
-                        {Array.isArray(categoryId) &&
-                          categoryId.map((id) => (
-                            <option key={id._id} value={id._id}>
-                              {id.name}
-                            </option>
-                          ))}
+                        {categoryList.map((cat) => (
+                          <option key={cat._id} value={cat._id}>
+                            {cat.name}
+                          </option>
+                        ))}
                       </select>
                     </div>
+
                     <div className="mb-3">
                       <label className="form-label">Title</label>
                       <input
@@ -320,6 +326,7 @@ export default function VideoList() {
                         onChange={handleChange}
                       />
                     </div>
+
                     <div className="mb-3">
                       <label className="form-label">Description</label>
                       <textarea
@@ -330,6 +337,7 @@ export default function VideoList() {
                         onChange={handleChange}
                       ></textarea>
                     </div>
+
                     <div className="mb-3">
                       <label className="form-label">Video (File) *</label>
                       <input
@@ -339,6 +347,7 @@ export default function VideoList() {
                         onChange={handleChange}
                       />
                     </div>
+
                     <div className="mb-3">
                       <label className="form-label">Thumbnail (File) *</label>
                       <input
@@ -348,6 +357,7 @@ export default function VideoList() {
                         onChange={handleChange}
                       />
                     </div>
+
                     <div className="mb-3">
                       <label className="form-label">Type</label>
                       <select
@@ -361,6 +371,7 @@ export default function VideoList() {
                         <option value="short_form">Short Form</option>
                       </select>
                     </div>
+
                     <div className="mb-3">
                       <label className="form-label">Tags</label>
                       <input
@@ -375,11 +386,22 @@ export default function VideoList() {
                   </form>
                 )}
               </div>
+
               <div className="modal-footer">
-                <button type="button" className="btn btn-danger" onClick={handleClose} disabled={saving}>
+                <button
+                  type="button"
+                  className="btn btn-danger"
+                  onClick={handleClose}
+                  disabled={saving}
+                >
                   Cancel
                 </button>
-                <button type="button" className="btn btn-primary" onClick={handleSave} disabled={saving}>
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  onClick={handleSave}
+                  disabled={saving}
+                >
                   {editingVideo ? "Update" : "Add"}
                 </button>
               </div>

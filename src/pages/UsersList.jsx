@@ -94,7 +94,7 @@ export default function UsersList() {
                         <td>
                           <div className="user-info">
                             <img
-                              src={`${baseURl}${data.image}`}
+                              src={`${baseURl}${data.avatar}`}
                               alt="avatar"
                               className="avatar"
                             />
