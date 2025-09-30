@@ -29,7 +29,8 @@ export default function TopVideos() {
 
   return (
     <div className="container mt-4" >
-      <h3 className="text-center fw-bold mb-4">🔥 Top Videos</h3>
+      <h3 className=" text-center mb-4 fw-bold  fw-bold text-primary">Top Videos</h3>
+      {/* <div className="text-muted small mb-4" >Dashboard / Top Videos</div> */}
       <div className="row">
         {topVideos.map((video) => (
           <div key={video._id} className="col-md-4 mb-4">

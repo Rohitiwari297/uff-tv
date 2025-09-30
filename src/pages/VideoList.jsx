@@ -22,6 +22,10 @@ export default function VideoList() {
     tags: "",
   });
 
+  // 🔹 Pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const videosPerPage = 10;
+
   const fetchVideos = () => {
     setLoading(true);
     axios
@@ -63,81 +67,61 @@ export default function VideoList() {
 
   const handleClose = () => setShowModal(false);
 
-const handleSave = async () => {
-  if (!editingVideo && (!formData.video || !formData.thumbnail)) {
-    alert("Please upload both video and thumbnail files.");
-    return;
-  }
-
-  setSaving(true);
-  const fd = new FormData();
-  fd.append("category", formData.category);
-  fd.append("title", formData.title);
-  fd.append("description", formData.description);
-
-  if (formData.video instanceof File) fd.append("video", formData.video);
-  if (formData.thumbnail instanceof File) fd.append("thumbnail", formData.thumbnail);
-
-  fd.append("type", formData.type);
-  fd.append("tags", formData.tags);
-
-  try {
-    let res;
-    if (editingVideo) {
-      res = await axios.put(`${baseURl}api/videos/${editingVideo._id}/`, fd, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
-      alert("Video updated successfully");
-
-      // //  Send notification after update
-      // const videoData = res.data.data || res.data;
-      // if (videoData) {
-      //   const notifRes = await sendNotification({
-      //     title: "Video Updated",
-      //     body: `Video "${formData.title}" has been updated successfully.`,
-      //     dataName: formData.title,
-      //     image: videoData.thumbnail,
-      //     videoId: videoData._id || videoData.id,
-      //   });
-      //   console.log("Notification result:", notifRes);
-      // }
-    } else {
-      res = await axios.post(`${baseURl}api/videos/`, fd, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
-
-      console.log("Full API response:", res.data);
-
-      const videoData = res.data.data || res.data;
-      console.log("Extracted video data:", videoData);
-
-      alert("Video added successfully");
-
-      // Send notification after new upload
-      if (videoData) {
-        const notifRes = await sendNotification({
-          title: "New Video Uploaded",
-          body: `Video "${videoData.title}" has been uploaded successfully.`,
-          dataName: videoData._id || videoData.id,
-          image: videoData.thumbnail,
-          videoId: videoData._id || videoData.id,
-          type: videoData.type,
-        });
-        console.log("Notification result:", notifRes);
-      }
+  const handleSave = async () => {
+    if (!editingVideo && (!formData.video || !formData.thumbnail)) {
+      alert("Please upload both video and thumbnail files.");
+      return;
     }
 
-    fetchVideos();
-    setShowModal(false);
-  } catch (err) {
-    console.error("Error saving video:", err.response?.data || err.message);
-    alert(`Something went wrong: ${err.response?.data?.message || err.message}`);
-  } finally {
-    setSaving(false);
-  }
-};
+    setSaving(true);
+    const fd = new FormData();
+    fd.append("category", formData.category);
+    fd.append("title", formData.title);
+    fd.append("description", formData.description);
 
+    if (formData.video instanceof File) fd.append("video", formData.video);
+    if (formData.thumbnail instanceof File) fd.append("thumbnail", formData.thumbnail);
 
+    fd.append("type", formData.type);
+    fd.append("tags", formData.tags);
+
+    try {
+      let res;
+      if (editingVideo) {
+        res = await axios.put(`${baseURl}api/videos/${editingVideo._id}/`, fd, {
+          headers: { "Content-Type": "multipart/form-data" },
+        });
+        alert("Video updated successfully");
+      } else {
+        res = await axios.post(`${baseURl}api/videos/`, fd, {
+          headers: { "Content-Type": "multipart/form-data" },
+        });
+
+        const videoData = res.data.data || res.data;
+        alert("Video added successfully");
+
+        // 🔔 Send notification
+        if (videoData) {
+          await sendNotification({
+            title: "New Video Uploaded",
+            body: `Video "${videoData.title}" has been uploaded successfully.`,
+            dataName: videoData._id || videoData.id,
+            image: videoData.thumbnail,
+            videoId: videoData._id || videoData.id,
+            type: videoData.type,
+          });
+        }
+      }
+
+      fetchVideos();
+      setShowModal(false);
+    } catch (err) {
+      console.error("Error saving video:", err.response?.data || err.message);
+      alert(`Something went wrong: ${err.response?.data?.message || err.message}`);
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const handleDelete = (id) => {
     if (!window.confirm("Are you sure you want to delete this video?")) return;
@@ -171,40 +155,56 @@ const handleSave = async () => {
       .finally(() => setLoading(false));
   }, []);
 
+  // 🔹 Pagination logic
+  const filteredVideos = allVideosList.filter((video) => {
+    if (!searchTerm) return true;
+    const term = searchTerm.toLowerCase();
+    return (
+      (video.category?.name || "").toLowerCase().includes(term) ||
+      (video.title || "").toLowerCase().includes(term) ||
+      (video.description || "").toLowerCase().includes(term) ||
+      (video.type || "").toLowerCase().includes(term) ||
+      (video.tags?.join(", ") || "").toLowerCase().includes(term)
+    );
+  });
+
+  const totalPages = Math.ceil(filteredVideos.length / videosPerPage);
+  const startIndex = (currentPage - 1) * videosPerPage;
+  const currentVideos = filteredVideos.slice(startIndex, startIndex + videosPerPage);
+
   return (
     <div className="app-cards">
       {/* Title + Add Video */}
       <div className="d-flex justify-content-between align-items-center mb-3">
         <div>
-          <h5 className="mb-1">Video List</h5>
-          <div className="text-muted small">Dashboard / Video</div>
+          <h4 className="fw-bold text-primary mb-1">Video List</h4>
+          <div className="text-muted small">Dashboard / Videos</div>
         </div>
-        <button className="btn btn-primary" onClick={handleAdd}>
+        <button className="btn btn-primary shadow-sm" onClick={handleAdd}>
           <i className="bi bi-plus me-2"></i>Add Video
         </button>
       </div>
 
       {/* Table Section */}
-      <div className="app-card p-3">
-        <div className="d-lg-flex justify-content-between align-items-center mb-3">
-          <div>
-            <input
-              type="text"
-              className="form-control"
-              placeholder="Search..."
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </div>
+      <div className="app-card p-3 shadow-sm rounded">
+        <div className="d-flex mb-3" style={{ gap: "10px", width: "100%" }}>
+          <input
+            type="text"
+            className="form-control w-full"
+            placeholder="Search Caregory, Title, Description, Type, Tags..."
+            onChange={(e) => setSearchTerm(e.target.value)}
+            style={{ borderRadius: "50px", padding: "0.5rem 0.75rem" }}
+          />
         </div>
 
         {loading ? (
-          <div className="text-center">Loading...</div>
+          <div className="text-center p-3">Loading...</div>
         ) : (
           <div className="table-responsive">
-            <table className="table table-hover align-middle">
-              <thead>
+            <table className="table table-hover align-middle bordered table-bordered mb-0 ">
+              <thead className="table-light">
                 <tr>
-                  <th>#</th>
+                  <th style={{ width: "auto" }}>#</th>
                   <th>Category</th>
                   <th>Title</th>
                   <th>Description</th>
@@ -216,62 +216,57 @@ const handleSave = async () => {
                 </tr>
               </thead>
               <tbody>
-                {allVideosList.length > 0 ? (
-                  allVideosList
-                    .filter((video) => {
-                      if (!searchTerm) return true;
-                      const term = searchTerm.toLowerCase();
-                      return (
-                        (video.category?.name || "").toLowerCase().includes(term) ||
-                        (video.title || "").toLowerCase().includes(term) ||
-                        (video.description || "").toLowerCase().includes(term) ||
-                        (video.type || "").toLowerCase().includes(term) ||
-                        (video.tags?.join(", ") || "").toLowerCase().includes(term)
-                      );
-                    })
-                    .map((video, idx) => (
-                      <tr key={video._id || idx}>
-                        <td>{idx + 1}</td>
-                        <td>{video.category?.name || "N/A"}</td>
-                        <td>{video.title || "Untitled"}</td>
-                        <td>{video.description || "No description"}</td>
-                        <td>
-                          {video.url ? (
-                            <a href={video.url} target="_blank" rel="noopener noreferrer">
-                              MP4
-                            </a>
-                          ) : (
-                            "No URL"
-                          )}
-                        </td>
-                        <td>
-                          <img
-                            src={video.thumbnail || ""}
-                            alt={video.title || "thumbnail"}
-                            className="avatar rounded"
-                            width="40"
-                          />
-                        </td>
-                        <td>{video.type || "N/A"}</td>
-                        <td>{video.tags?.length > 0 ? video.tags.join(", ") : "N/A"}</td>
-                        <td>
-                          <div className="d-flex">
-                            <button
-                              onClick={() => handleEdit(video)}
-                              className="btn btn-sm btn-primary me-2"
-                            >
-                              <i className="bi bi-pencil-square"></i>
-                            </button>
-                            <button
-                              onClick={() => handleDelete(video._id || video.id)}
-                              className="btn btn-sm btn-danger"
-                            >
-                              <i className="bi bi-trash"></i>
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))
+                {currentVideos.length > 0 ? (
+                  currentVideos.map((video, idx) => (
+                    <tr key={video._id || idx}>
+                      {/* Continuous index */}
+                      <td>{startIndex + idx + 1}</td>
+                      <td>{video.category?.name || "N/A"}</td>
+                      <td className="fw-semibold">{video.title || "Untitled"}</td>
+                      <td>{video.description || "No description"}</td>
+                      <td>
+                        {video.url ? (
+                          <a
+                            href={video.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="btn btn-sm btn-outline-primary "
+                            style={{ fontSize: "0.75rem", width: "fit-content" }}
+                          >
+                            View
+                          </a>
+                        ) : (
+                          "No URL"
+                        )}
+                      </td>
+                      <td>
+                        <img
+                          src={video.thumbnail || ""}
+                          alt={video.title || "thumbnail"}
+                          className="rounded border"
+                          style={{ width: "120px", height: "45px", objectFit: "cover" }}
+                        />
+                      </td>
+                      <td>{video.type || "N/A"}</td>
+                      <td>{video.tags?.length > 0 ? video.tags.join(", ") : "N/A"}</td>
+                      <td>
+                        <div className="d-flex">
+                          <button
+                            onClick={() => handleEdit(video)}
+                            className="btn btn-sm btn-primary me-2"
+                          >
+                            <i className="bi bi-pencil-square"></i>
+                          </button>
+                          <button
+                            onClick={() => handleDelete(video._id || video.id)}
+                            className="btn btn-sm btn-danger"
+                          >
+                            <i className="bi bi-trash"></i>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
                 ) : (
                   <tr>
                     <td colSpan="9" className="text-center text-muted">
@@ -283,12 +278,42 @@ const handleSave = async () => {
             </table>
           </div>
         )}
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="d-flex justify-content-center mt-3">
+            <nav>
+              <ul className="pagination pagination-sm mb-0">
+                <li className={`page-item ${currentPage === 1 ? "disabled" : ""}`}>
+                  <button className="page-link" onClick={() => setCurrentPage((p) => p - 1)}>
+                    Previous
+                  </button>
+                </li>
+                {Array.from({ length: totalPages }, (_, i) => (
+                  <li
+                    key={i}
+                    className={`page-item ${currentPage === i + 1 ? "active" : ""}`}
+                  >
+                    <button className="page-link" onClick={() => setCurrentPage(i + 1)}>
+                      {i + 1}
+                    </button>
+                  </li>
+                ))}
+                <li className={`page-item ${currentPage === totalPages ? "disabled" : ""}`}>
+                  <button className="page-link" onClick={() => setCurrentPage((p) => p + 1)}>
+                    Next
+                  </button>
+                </li>
+              </ul>
+            </nav>
+          </div>
+        )}
       </div>
 
-      {/* Add/Edit Modal */}
+      {/* Modal */}
       {showModal && (
         <div className="modal fade show d-block" style={{ background: "rgba(0,0,0,0.5)" }}>
-          <div className="modal-dialog modal-dialog-centered">
+          <div className="modal-dialog modal-lg modal-dialog-centered">
             <div className="modal-content">
               <div className="modal-header">
                 <h5 className="modal-title">{editingVideo ? "Edit Video" : "Add Video"}</h5>

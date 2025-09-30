@@ -137,7 +137,8 @@ const Banner = () => {
 
   return (
     <div className="app-card p-3">
-      <h3 className="mb-3">Banners</h3>
+      <h3 className=" fw-bold text-primary mb-1 ">Banners</h3>
+      <div className="text-muted small mb-3">Dashboard / Banners</div>
 
       {/* Add Banner Form */}
       <form onSubmit={handleBanners} className="mb-4">
@@ -169,7 +170,7 @@ const Banner = () => {
       </form>
 
       {/* Banner Table */}
-      <table className="table table-striped align-middle">
+      <table className="table table-striped align-middle table-bordered mb-0 ">
         <thead>
           <tr>
             <th>#</th>

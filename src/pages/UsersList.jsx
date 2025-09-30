@@ -27,35 +27,29 @@ export default function UsersList() {
   return (
     <div className="app-cards">
       {/* Title + Breadcrumb + Add User Button */}
-      <div className="d-flex justify-content-between align-items-center mb-3">
+      <div className="d-flex justify-content-between align-items-center mb-4">
         <div>
-          <h5 className="mb-1">Users List</h5>
-          <div className="text-muted small"> Dashboard / Users</div>
+          <h4 className="fw-bold mb-1 text-primary">Users List</h4>
+          <div className="text-muted small">Dashboard / Users</div>
         </div>
       </div>
 
       {/* Table Section */}
-      <div className="app-card p-3">
-        <div className="d-lg-flex justify-content-between align-items-center mb-3">
-          {/* <div className="d-flex align-items-center mb-lg-0 mb-3">
-            <label className="me-2">Show</label>
-            <select
-              className="form-select form-select-sm"
-              style={{ width: "70px" }}
-            >
-              <option >10</option>
-              <option>25</option>
-              <option>50</option>
-            </select>
-            <label className="ms-2">entries</label>
-          </div> */}
-          <div>
+      <div className="app-card p-4 shadow-sm rounded-3 bg-white">
+        <div className=" mb-3">
+          <div className="position-relative" style={{ maxWidth: "100%" }}>
             <input
               type="text"
-              className="form-control"
-              placeholder="Search..."
+              className="form-control ps-5"
+              placeholder="🔍 Search users..."
               onChange={(e) => {
                 setSearch(e.target.value);
+              }}
+              style={{
+                borderRadius: "50px",
+                padding: "0.6rem 1rem",
+                fontSize: "14px",
+                width: "100%",
               }}
             />
           </div>
@@ -63,16 +57,17 @@ export default function UsersList() {
 
         {/* Loader */}
         {loading ? (
-          <div className="text-center ">
-            Loading...
+          <div className="text-center py-5">
+            <div className="spinner-border text-primary" role="status"></div>
+            <p className="mt-3 text-muted">Loading users...</p>
           </div>
         ) : (
           <div className="table-responsive">
-            <table className="table table-hover align-middle">
-              <thead>
+            <table className="table table-hover align-middle table-bordered">
+              <thead className="table-light">
                 <tr>
                   <th style={{ width: "50px" }}>#</th>
-                  <th>Image</th>
+                  <th>Profile</th>
                   <th>Name</th>
                   <th>Email</th>
                   <th>Mobile Number</th>
@@ -88,20 +83,27 @@ export default function UsersList() {
                         : item.name.toLowerCase().includes(search);
                     })
                     .map((data, index) => (
-                      
-                      <tr key={index}>
+                      <tr key={index} className="align-middle">
                         <td>{index + 1}</td>
                         <td>
-                          <div className="user-info">
+                          <div className="d-flex align-items-center">
                             <img
                               src={`${baseURl}${data.avatar}`}
                               alt="avatar"
-                              className="avatar"
+                              className="rounded-circle me-2"
+                              style={{
+                                width: "45px",
+                                height: "45px",
+                                objectFit: "cover",
+                                border: "2px solid #f0f0f0",
+                              }}
                             />
                           </div>
                         </td>
-                        <td>{data.name}</td>
-                        <td>{data.email}</td>
+                        <td className="fw-semibold">{data.name}</td>
+                        <td>
+                          <span className="text-muted small">{data.email}</span>
+                        </td>
                         <td>{data.mobile}</td>
                         {/* <td>
                           <button className="btn btn-sm btn-danger">
@@ -112,7 +114,7 @@ export default function UsersList() {
                     ))
                 ) : (
                   <tr>
-                    <td colSpan="6" className="text-center text-muted">
+                    <td colSpan="6" className="text-center text-muted py-4">
                       No users found
                     </td>
                   </tr>

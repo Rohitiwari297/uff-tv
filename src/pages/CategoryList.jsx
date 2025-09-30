@@ -23,16 +23,14 @@ export default function CategoryList() {
     setLoading(true);
     axios
       .get(`${baseURl}api/category/`)
-      .then((res) => {setCategory(res.data.data || [])
-        console.log(res.data)
+      .then((res) => {
+        setCategory(res.data.data || []);
+        console.log(res.data);
       })
-      
       .catch((err) => console.error("Error fetching categories:", err))
       .finally(() => setLoading(false));
-
   };
 
-  // Open modal for adding new category
   const handleAdd = () => {
     setEditingCategory(null);
     setCategoryName("");
@@ -40,23 +38,20 @@ export default function CategoryList() {
     setShowModal(true);
   };
 
-  // Open modal for editing existing category
   const handleEdit = (cat) => {
     setEditingCategory(cat);
-    setCategoryName(cat.name);   // prefill name
-    setCategoryImage(null);      // reset file input
-    setShowModal(true);          // show modal
+    setCategoryName(cat.name);
+    setCategoryImage(null);
+    setShowModal(true);
   };
 
   const handleClose = () => setShowModal(false);
 
-  // Add new category
   const addCategory = () => {
     if (!categoryName || !categoryImage) {
       alert("Please enter category name and image");
       return;
     }
-
     const formData = new FormData();
     formData.append("name", categoryName);
     formData.append("image", categoryImage);
@@ -67,7 +62,7 @@ export default function CategoryList() {
       })
       .then((res) => {
         alert("Category added");
-        setCategory((prev) => [...prev, res.data.data]); // update instantly
+        setCategory((prev) => [...prev, res.data.data]);
         setShowModal(false);
         setCategoryName("");
         setCategoryImage(null);
@@ -75,17 +70,15 @@ export default function CategoryList() {
       .catch((err) => console.error("Error adding category:", err));
   };
 
-  // Update existing category
   const updateCategory = () => {
     if (!categoryName) {
       alert("Category name is required");
       return;
     }
-
     const formData = new FormData();
     formData.append("name", categoryName);
     if (categoryImage) {
-      formData.append("image", categoryImage); // append image only if selected
+      formData.append("image", categoryImage);
     }
 
     axios
@@ -112,7 +105,6 @@ export default function CategoryList() {
       .catch((err) => console.error("Error updating category:", err));
   };
 
-  // Delete category
   const handleDelete = (id) => {
     if (!window.confirm("Are you sure you want to delete this video?")) return;
     axios
@@ -129,34 +121,37 @@ export default function CategoryList() {
   return (
     <div className="app-cards">
       {/* Title + Add Category */}
-      <div className="d-flex justify-content-between align-items-center mb-3">
+      <div className="d-flex justify-content-between align-items-center mb-4">
         <div>
-          <h5 className="mb-1">Category List</h5>
-          <div className="text-muted small"> Dashboard / Category</div>
+          <h4 className="fw-bold text-primary mb-1">Category List</h4>
+          <div className="text-muted small">Dashboard / Category</div>
         </div>
-        <button className="btn btn-primary" onClick={handleAdd}>
-          <i className="bi bi-plus me-2"></i>Add Category
+        <button className="btn btn-primary shadow-sm px-3" onClick={handleAdd}>
+          <i className="bi bi-plus-lg me-2"></i>Add Category
         </button>
       </div>
 
       {/* Table */}
-      <div className="app-card p-3">
+      <div className="app-card p-4 shadow-sm rounded-3 bg-white">
         {loading ? (
-          <div className="text-center">Loading...</div>
+          <div className="text-center py-5">
+            <div className="spinner-border text-primary" role="status"></div>
+            <p className="mt-3 text-muted">Loading categories...</p>
+          </div>
         ) : (
           <>
             <div className="mb-3">
               <input
                 type="text"
-                className="form-control"
-                placeholder="Search..."
+                className="form-control rounded-pill px-3"
+                placeholder="🔍 Search categories..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
               />
             </div>
             <div className="table-responsive">
-              <table className="table table-hover align-middle">
-                <thead>
+              <table className="table table-hover align-middle table-bordered">
+                <thead className="table-light">
                   <tr>
                     <th style={{ width: "50px" }}>#</th>
                     <th>Name</th>
@@ -174,7 +169,7 @@ export default function CategoryList() {
                     .map((data, index) => (
                       <tr key={data.id || data._id || index}>
                         <td>{index + 1}</td>
-                        <td>{data.name}</td>
+                        <td className="fw-semibold">{data.name}</td>
                         <td>
                           <img
                             src={
@@ -183,7 +178,7 @@ export default function CategoryList() {
                                 : `${baseURl}${data.image}`
                             }
                             alt="category"
-                            className="avatar rounded"
+                            className="rounded-circle border"
                             style={{
                               width: "50px",
                               height: "50px",
@@ -195,7 +190,7 @@ export default function CategoryList() {
                           <div className="d-flex">
                             <button
                               onClick={() => handleEdit(data)}
-                              className="btn btn-sm btn-primary me-2"
+                              className="btn btn-sm btn-outline-primary me-2"
                             >
                               <i className="bi bi-pencil-square"></i>
                             </button>
@@ -203,7 +198,7 @@ export default function CategoryList() {
                               onClick={() =>
                                 handleDelete(data.id || data._id)
                               }
-                              className="btn btn-sm btn-danger"
+                              className="btn btn-sm btn-outline-danger"
                             >
                               <i className="bi bi-trash"></i>
                             </button>
@@ -225,9 +220,9 @@ export default function CategoryList() {
           style={{ background: "rgba(0,0,0,0.5)" }}
         >
           <div className="modal-dialog modal-dialog-centered">
-            <div className="modal-content">
-              <div className="modal-header">
-                <h5 className="modal-title">
+            <div className="modal-content shadow-lg border-0 rounded-3">
+              <div className="modal-header border-0">
+                <h5 className="modal-title fw-bold text-primary">
                   {editingCategory ? "Edit Category" : "Add Category"}
                 </h5>
                 <button
@@ -239,7 +234,9 @@ export default function CategoryList() {
               <div className="modal-body">
                 <form>
                   <div className="mb-3">
-                    <label className="form-label">Category Name</label>
+                    <label className="form-label fw-semibold">
+                      Category Name
+                    </label>
                     <input
                       type="text"
                       className="form-control"
@@ -249,7 +246,7 @@ export default function CategoryList() {
                     />
                   </div>
                   <div className="mb-3">
-                    <label className="form-label">Image</label>
+                    <label className="form-label fw-semibold">Image</label>
                     <input
                       type="file"
                       className="form-control"
@@ -258,10 +255,10 @@ export default function CategoryList() {
                   </div>
                 </form>
               </div>
-              <div className="modal-footer">
+              <div className="modal-footer border-0">
                 <button
                   type="button"
-                  className="btn btn-danger"
+                  className="btn btn-outline-secondary"
                   onClick={handleClose}
                 >
                   Cancel
