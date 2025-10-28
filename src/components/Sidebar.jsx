@@ -131,6 +131,14 @@ export default function Sidebar({ onItemClickClose = false }) {
             <i className="bi bi-people"></i>
             <span>Contribution</span>
           </NavLink>
+          <NavLink
+            to="/upload-mprian"
+            className="sidebar-link"
+            onClick={closeOffcanvas}
+          >
+            <i className="bi bi-upload"></i>
+            <span>Upload-Mprian</span>
+          </NavLink>
         </nav>
       </div>
     </div>

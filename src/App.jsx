@@ -19,6 +19,7 @@ import TopRetentions from "./pages/TopRetentions";
 import Popup from "./pages/Popup";
 import Feedback from "./pages/Feedback";
 import Contributions from "./pages/Contributions";
+import Mprian from "./pages/Mprian";
 
 export default function App() {
   return (
@@ -48,6 +49,7 @@ export default function App() {
         <Route path="/pop-up" element={<Popup/>} />
         <Route path="/feedback" element={<Feedback/>} />
         <Route path="/contribution" element={<Contributions/>} />
+        <Route path="/upload-mprian" element={ <Mprian/>} />
 
 
 

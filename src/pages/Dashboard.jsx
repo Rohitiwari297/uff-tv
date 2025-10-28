@@ -311,7 +311,7 @@ export default function Dashboard() {
 
         {/* Contributions */}
         <div className="col-12 col-md-6 col-xl-4">
-          <Link to="/contributions" className="text-decoration-none">
+          <Link to="/contribution" className="text-decoration-none">
           <div
             className="app-card d-flex justify-content-between align-items-center p-3 rounded-4 shadow-sm"
             style={{
