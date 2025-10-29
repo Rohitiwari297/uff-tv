@@ -3,7 +3,6 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import axios from "axios";
 import { baseURl } from "../Api/url";
 import { sendNotification } from "../utils/sendNotification";
-import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd"; // 🟢 Added import
 
 export default function VideoList() {
   const [allVideosList, setAllVideosList] = useState([]);
@@ -21,6 +20,7 @@ export default function VideoList() {
     thumbnail: null,
     type: "",
     tags: "",
+    position: "",
   });
 
   // 🔹 Pagination
@@ -35,6 +35,8 @@ export default function VideoList() {
       .catch(console.error)
       .finally(() => setLoading(false));
   };
+
+  console.log("All Videos List:", allVideosList);
 
   useEffect(() => fetchVideos(), []);
 
@@ -62,6 +64,7 @@ export default function VideoList() {
       thumbnail: video.thumbnail || null,
       type: video.type || "",
       tags: video.tags ? video.tags.join(", ") : "",
+      position: video.position || "",
     });
     setShowModal(true);
   };
@@ -85,6 +88,7 @@ export default function VideoList() {
 
     fd.append("type", formData.type);
     fd.append("tags", formData.tags);
+    fd.append("position", formData.position);
 
     try {
       let res;
@@ -101,6 +105,7 @@ export default function VideoList() {
         const videoData = res.data.data || res.data;
         alert("Video added successfully");
 
+        // 🔔 Send notification
         if (videoData) {
           await sendNotification({
             title: "New Video Uploaded",
@@ -173,20 +178,6 @@ export default function VideoList() {
   const startIndex = (currentPage - 1) * videosPerPage;
   const currentVideos = filteredVideos.slice(startIndex, startIndex + videosPerPage);
 
-  // 🟢 DND: Reorder handler
-  const handleDragEnd = (result) => {
-    if (!result.destination) return;
-
-    const reordered = Array.from(currentVideos);
-    const [movedItem] = reordered.splice(result.source.index, 1);
-    reordered.splice(result.destination.index, 0, movedItem);
-
-    // Update both current page and full list
-    const newAllVideos = [...allVideosList];
-    newAllVideos.splice(startIndex, reordered.length, ...reordered);
-    setAllVideosList(newAllVideos);
-  };
-
   return (
     <div className="app-cards draggable-cards-container">
       {/* Title + Add Video */}
@@ -230,108 +221,66 @@ export default function VideoList() {
                   <th style={{ width: "120px" }}>Actions</th>
                 </tr>
               </thead>
-
-              {/* 🟢 DnD Table Body */}
-              <DragDropContext onDragEnd={handleDragEnd}>
-                <Droppable droppableId="video-table">
-                  {(provided) => (
-                    <tbody ref={provided.innerRef} {...provided.droppableProps}>
-                      {currentVideos.length > 0 ? (
-                        currentVideos.map((video, idx) => (
-                          <Draggable
-                            key={video._id || idx}
-                            draggableId={video._id?.toString() || idx.toString()}
-                            index={idx}
+              <tbody>
+                {currentVideos.length > 0 ? (
+                  currentVideos.map((video, idx) => (
+                    <tr key={video.position }>
+                      {/* Continuous index */}
+                      <td>{video.position}</td>
+                      <td>{video.category?.name || "N/A"}</td>
+                      <td className="fw-semibold">{video.title || "Untitled"}</td>
+                      <td>{video.description || "No description"}</td>
+                      <td>
+                        {video.url ? (
+                          <a
+                            href={video.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="btn btn-sm btn-outline-primary "
+                            style={{ fontSize: "0.75rem", width: "fit-content" }}
                           >
-                            {(provided, snapshot) => (
-                              <tr
-                                ref={provided.innerRef}
-                                {...provided.draggableProps}
-                                {...provided.dragHandleProps}
-                                style={{
-                                  ...provided.draggableProps.style,
-                                  background: snapshot.isDragging
-                                    ? "#eef5ff"
-                                    : "white",
-                                  cursor: "grab",
-                                }}
-                              >
-                                <td>{startIndex + idx + 1}</td>
-                                <td>{video.category?.name || "N/A"}</td>
-                                <td className="fw-semibold">
-                                  {video.title || "Untitled"}
-                                </td>
-                                <td>{video.description || "No description"}</td>
-                                <td>
-                                  {video.url ? (
-                                    <a
-                                      href={video.url}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      className="btn btn-sm btn-outline-primary "
-                                      style={{
-                                        fontSize: "0.75rem",
-                                        width: "fit-content",
-                                      }}
-                                    >
-                                      View
-                                    </a>
-                                  ) : (
-                                    "No URL"
-                                  )}
-                                </td>
-                                <td>
-                                  <img
-                                    src={video.thumbnail || ""}
-                                    alt={video.title || "thumbnail"}
-                                    className="rounded border"
-                                    style={{
-                                      width: "120px",
-                                      height: "45px",
-                                      objectFit: "cover",
-                                    }}
-                                  />
-                                </td>
-                                <td>{video.type || "N/A"}</td>
-                                <td>
-                                  {video.tags?.length > 0
-                                    ? video.tags.join(", ")
-                                    : "N/A"}
-                                </td>
-                                <td>
-                                  <div className="d-flex">
-                                    <button
-                                      onClick={() => handleEdit(video)}
-                                      className="btn btn-sm btn-primary me-2"
-                                    >
-                                      <i className="bi bi-pencil-square"></i>
-                                    </button>
-                                    <button
-                                      onClick={() =>
-                                        handleDelete(video._id || video.id)
-                                      }
-                                      className="btn btn-sm btn-danger"
-                                    >
-                                      <i className="bi bi-trash"></i>
-                                    </button>
-                                  </div>
-                                </td>
-                              </tr>
-                            )}
-                          </Draggable>
-                        ))
-                      ) : (
-                        <tr>
-                          <td colSpan="9" className="text-center text-muted">
-                            No videos found
-                          </td>
-                        </tr>
-                      )}
-                      {provided.placeholder}
-                    </tbody>
-                  )}
-                </Droppable>
-              </DragDropContext>
+                            View
+                          </a>
+                        ) : (
+                          "No URL"
+                        )}
+                      </td>
+                      <td>
+                        <img
+                          src={video.thumbnail || ""}
+                          alt={video.title || "thumbnail"}
+                          className="rounded border"
+                          style={{ width: "120px", height: "45px", objectFit: "cover" }}
+                        />
+                      </td>
+                      <td>{video.type || "N/A"}</td>
+                      <td>{video.tags?.length > 0 ? video.tags.join(", ") : "N/A"}</td>
+                      <td>
+                        <div className="d-flex">
+                          <button
+                            onClick={() => handleEdit(video)}
+                            className="btn btn-sm btn-primary me-2"
+                          >
+                            <i className="bi bi-pencil-square"></i>
+                          </button>
+                          <button
+                            onClick={() => handleDelete(video._id || video.id)}
+                            className="btn btn-sm btn-danger"
+                          >
+                            <i className="bi bi-trash"></i>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan="9" className="text-center text-muted">
+                      No videos found
+                    </td>
+                  </tr>
+                )}
+              </tbody>
             </table>
           </div>
         )}
@@ -341,42 +290,23 @@ export default function VideoList() {
           <div className="d-flex justify-content-center mt-3">
             <nav>
               <ul className="pagination pagination-sm mb-0">
-                <li
-                  className={`page-item ${
-                    currentPage === 1 ? "disabled" : ""
-                  }`}
-                >
-                  <button
-                    className="page-link"
-                    onClick={() => setCurrentPage((p) => p - 1)}
-                  >
+                <li className={`page-item ${currentPage === 1 ? "disabled" : ""}`}>
+                  <button className="page-link" onClick={() => setCurrentPage((p) => p - 1)}>
                     Previous
                   </button>
                 </li>
                 {Array.from({ length: totalPages }, (_, i) => (
                   <li
                     key={i}
-                    className={`page-item ${
-                      currentPage === i + 1 ? "active" : ""
-                    }`}
+                    className={`page-item ${currentPage === i + 1 ? "active" : ""}`}
                   >
-                    <button
-                      className="page-link"
-                      onClick={() => setCurrentPage(i + 1)}
-                    >
+                    <button className="page-link" onClick={() => setCurrentPage(i + 1)}>
                       {i + 1}
                     </button>
                   </li>
                 ))}
-                <li
-                  className={`page-item ${
-                    currentPage === totalPages ? "disabled" : ""
-                  }`}
-                >
-                  <button
-                    className="page-link"
-                    onClick={() => setCurrentPage((p) => p + 1)}
-                  >
+                <li className={`page-item ${currentPage === totalPages ? "disabled" : ""}`}>
+                  <button className="page-link" onClick={() => setCurrentPage((p) => p + 1)}>
                     Next
                   </button>
                 </li>
@@ -386,23 +316,14 @@ export default function VideoList() {
         )}
       </div>
 
-      {/* Modal (unchanged) */}
+      {/* Modal */}
       {showModal && (
-        <div
-          className="modal fade show d-block"
-          style={{ background: "rgba(0,0,0,0.5)" }}
-        >
+        <div className="modal fade show d-block" style={{ background: "rgba(0,0,0,0.5)" }}>
           <div className="modal-dialog modal-lg modal-dialog-centered">
             <div className="modal-content">
               <div className="modal-header">
-                <h5 className="modal-title">
-                  {editingVideo ? "Edit Video" : "Add Video"}
-                </h5>
-                <button
-                  type="button"
-                  className="btn-close"
-                  onClick={handleClose}
-                ></button>
+                <h5 className="modal-title">{editingVideo ? "Edit Video" : "Add Video"}</h5>
+                <button type="button" className="btn-close" onClick={handleClose}></button>
               </div>
               <div className="modal-body">
                 {saving ? (
@@ -449,7 +370,7 @@ export default function VideoList() {
                     </div>
 
                     <div className="mb-3">
-                      <label className="form-label">Video (File) *</label>
+                      <label className="form-label">Video (File) </label>
                       <input
                         type="file"
                         name="video"
@@ -459,7 +380,7 @@ export default function VideoList() {
                     </div>
 
                     <div className="mb-3">
-                      <label className="form-label">Thumbnail (File) *</label>
+                      <label className="form-label">Thumbnail (File)</label>
                       <input
                         type="file"
                         name="thumbnail"
@@ -491,6 +412,17 @@ export default function VideoList() {
                         value={formData.tags}
                         onChange={handleChange}
                         placeholder="e.g. trending, recent"
+                      />
+                    </div>
+                    <div className="mb-3">
+                      <label className="form-label">Position</label>
+                      <input
+                        type="number"
+                        name="position"
+                        className="form-control"
+                        value={formData.position}
+                        onChange={handleChange}
+                        placeholder="e.g. 1"  
                       />
                     </div>
                   </form>
