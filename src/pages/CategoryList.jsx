@@ -13,6 +13,7 @@ export default function CategoryList() {
   // Form state
   const [categoryName, setCategoryName] = useState("");
   const [categoryImage, setCategoryImage] = useState(null);
+  const [categoryPosition, setCategoryPosition] = useState("");
 
   // Fetch categories
   useEffect(() => {
@@ -31,52 +32,67 @@ export default function CategoryList() {
       .finally(() => setLoading(false));
   };
 
+  // Handle Add
   const handleAdd = () => {
     setEditingCategory(null);
     setCategoryName("");
     setCategoryImage(null);
+    setCategoryPosition("");
     setShowModal(true);
   };
 
+  // Handle Edit
   const handleEdit = (cat) => {
     setEditingCategory(cat);
     setCategoryName(cat.name);
+    setCategoryPosition(cat.position || "");
     setCategoryImage(null);
     setShowModal(true);
   };
 
-  const handleClose = () => setShowModal(false);
+  // Close Modal
+  const handleClose = () => {
+    setShowModal(false);
+    setEditingCategory(null);
+    setCategoryName("");
+    setCategoryImage(null);
+    setCategoryPosition("");
+  };
 
+  // Add Category
   const addCategory = () => {
     if (!categoryName || !categoryImage) {
       alert("Please enter category name and image");
       return;
     }
+
     const formData = new FormData();
     formData.append("name", categoryName);
     formData.append("image", categoryImage);
+    formData.append("position", categoryPosition);
 
     axios
       .post(`${baseURl}api/category/`, formData, {
         headers: { "Content-Type": "multipart/form-data" },
       })
       .then((res) => {
-        alert("Category added");
+        alert("Category added successfully");
         setCategory((prev) => [...prev, res.data.data]);
-        setShowModal(false);
-        setCategoryName("");
-        setCategoryImage(null);
+        handleClose();
       })
       .catch((err) => console.error("Error adding category:", err));
   };
 
+  // Update Category
   const updateCategory = () => {
     if (!categoryName) {
       alert("Category name is required");
       return;
     }
+
     const formData = new FormData();
     formData.append("name", categoryName);
+    formData.append("position", categoryPosition);
     if (categoryImage) {
       formData.append("image", categoryImage);
     }
@@ -97,20 +113,20 @@ export default function CategoryList() {
               : cat
           )
         );
-        setShowModal(false);
-        setEditingCategory(null);
-        setCategoryName("");
-        setCategoryImage(null);
+        alert("Category updated successfully");
+        handleClose();
       })
       .catch((err) => console.error("Error updating category:", err));
   };
 
+  // Delete Category
   const handleDelete = (id) => {
-    if (!window.confirm("Are you sure you want to delete this video?")) return;
+    if (!window.confirm("Are you sure you want to delete this category?")) return;
+
     axios
       .delete(`${baseURl}api/category/${id}`)
-      .then((res) => {
-        alert("Record deleted successfully");
+      .then(() => {
+        alert("Category deleted successfully");
         setCategory((prev) =>
           prev.filter((data) => data.id !== id && data._id !== id)
         );
@@ -120,7 +136,7 @@ export default function CategoryList() {
 
   return (
     <div className="app-cards">
-      {/* Title + Add Category */}
+      {/* Header Section */}
       <div className="d-flex justify-content-between align-items-center mb-4">
         <div>
           <h4 className="fw-bold text-primary mb-1">Category List</h4>
@@ -131,7 +147,7 @@ export default function CategoryList() {
         </button>
       </div>
 
-      {/* Table */}
+      {/* Table Section */}
       <div className="app-card p-4 shadow-sm rounded-3 bg-white">
         {loading ? (
           <div className="text-center py-5">
@@ -149,11 +165,12 @@ export default function CategoryList() {
                 onChange={(e) => setSearch(e.target.value)}
               />
             </div>
+
             <div className="table-responsive">
               <table className="table table-hover align-middle table-bordered">
                 <thead className="table-light">
                   <tr>
-                    <th style={{ width: "50px" }}>#</th>
+                    <th style={{ width: "80px" }}>Position</th>
                     <th>Name</th>
                     <th>Image</th>
                     <th style={{ width: "120px" }}>Actions</th>
@@ -168,7 +185,7 @@ export default function CategoryList() {
                     )
                     .map((data, index) => (
                       <tr key={data.id || data._id || index}>
-                        <td>{index + 1}</td>
+                        <td>{data.position}</td>
                         <td className="fw-semibold">{data.name}</td>
                         <td>
                           <img
@@ -213,7 +230,7 @@ export default function CategoryList() {
         )}
       </div>
 
-      {/* Modal */}
+      {/* Modal Section */}
       {showModal && (
         <div
           className="modal fade show d-block"
@@ -231,6 +248,7 @@ export default function CategoryList() {
                   onClick={handleClose}
                 ></button>
               </div>
+
               <div className="modal-body">
                 <form>
                   <div className="mb-3">
@@ -245,6 +263,7 @@ export default function CategoryList() {
                       onChange={(e) => setCategoryName(e.target.value)}
                     />
                   </div>
+
                   <div className="mb-3">
                     <label className="form-label fw-semibold">Image</label>
                     <input
@@ -253,8 +272,20 @@ export default function CategoryList() {
                       onChange={(e) => setCategoryImage(e.target.files[0])}
                     />
                   </div>
+
+                  <div className="mb-3">
+                    <label className="form-label fw-semibold">Position</label>
+                    <input
+                      type="number"
+                      className="form-control"
+                      placeholder="e.g., 1"
+                      value={categoryPosition}
+                      onChange={(e) => setCategoryPosition(e.target.value)}
+                    />
+                  </div>
                 </form>
               </div>
+
               <div className="modal-footer border-0">
                 <button
                   type="button"
