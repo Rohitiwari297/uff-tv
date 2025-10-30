@@ -79,7 +79,11 @@ export default function VideoList() {
 
     setSaving(true);
     const fd = new FormData();
-    fd.append("category", formData.category);
+
+    // conditionally append category for add shorts and videos
+    if (formData.category != "" && formData.category != null) {
+      fd.append("category", formData.category);
+    }
     fd.append("title", formData.title);
     fd.append("description", formData.description);
 
@@ -98,6 +102,7 @@ export default function VideoList() {
         });
         alert("Video updated successfully");
       } else {
+        console.log("Adding new video with data:", fd.get("category"), fd.get("title"), fd.get("description"), fd.get("video"), fd.get("thumbnail"), fd.get("type"), fd.get("tags"), fd.get("position"));
         res = await axios.post(`${baseURl}api/videos/`, fd, {
           headers: { "Content-Type": "multipart/form-data" },
         });
@@ -227,7 +232,7 @@ export default function VideoList() {
                     <tr key={video.position }>
                       {/* Continuous index */}
                       <td>{video.position}</td>
-                      <td>{video.category?.name || "N/A"}</td>
+                      <td>{video.category?.name || ""}</td>
                       <td className="fw-semibold">{video.title || "Untitled"}</td>
                       <td>{video.description || "No description"}</td>
                       <td>
